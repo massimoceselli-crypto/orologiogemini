@@ -213,6 +213,62 @@
       color: #aaa;
       margin-bottom: 8px;
     }
+
+    /* SELETTORE ORE E MINUTI CON FRECCETTE SU/GIU */
+    .time-picker-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 12px 0;
+      background: #111;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #333;
+    }
+    .time-box {
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      padding: 6px 14px;
+      background: #252525;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .time-box.selected {
+      border-color: #00bcd4;
+      color: #00bcd4;
+      background: #102a30;
+    }
+    .time-separator {
+      font-size: 28px;
+      font-weight: bold;
+      color: #00bcd4;
+    }
+    .arrow-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .btn-arrow {
+      background: #333;
+      color: #00bcd4;
+      border: 1px solid #555;
+      width: 40px;
+      height: 34px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-arrow:active {
+      background: #00bcd4;
+      color: #000;
+    }
+
     .color-picker-row {
       display: flex;
       justify-content: space-around;
@@ -245,18 +301,6 @@
       background: #00bcd4;
       color: #000;
       border-color: #00bcd4;
-    }
-    .time-input {
-      width: 100%;
-      padding: 10px;
-      background: #111;
-      border: 1px solid #00bcd4;
-      color: #00bcd4;
-      font-size: 22px;
-      border-radius: 8px;
-      text-align: center;
-      margin-bottom: 8px;
-      font-weight: bold;
     }
     .select-input {
       width: 100%;
@@ -347,10 +391,22 @@
   <div id="settings-modal" class="modal-overlay">
     <div class="modal-card">
       <h2>⚙️ SETTAGGI GENERALI</h2>
+
       <div class="setting-group">
         <div class="setting-title">🔔 Impostazione Sveglia</div>
-        <div class="setting-desc">Pianifica l'orario e attiva il risveglio progressivo con volume a crescere.</div>
-        <input type="time" id="alarm-time-input" class="time-input">
+        <div class="setting-desc">Seleziona Ore o Minuti e premi le freccette ▲ / ▼ per regolare l'orario.</div>
+        
+        <!-- SELETTORE ORE E MINUTI CON FRECCETTE -->
+        <div class="time-picker-container">
+          <div id="picker-hours" class="time-box selected" onclick="selectPickerField('hours')">07</div>
+          <div class="time-separator">:</div>
+          <div id="picker-minutes" class="time-box" onclick="selectPickerField('minutes')">00</div>
+          <div class="arrow-btns">
+            <button class="btn-arrow" onclick="adjustAlarmTime(1)"><i class="fa-solid fa-chevron-up"></i></button>
+            <button class="btn-arrow" onclick="adjustAlarmTime(-1)"><i class="fa-solid fa-chevron-down"></i></button>
+          </div>
+        </div>
+
         <div class="setting-title" style="margin-top: 6px;">Tipo di Suoneria Sveglia</div>
         <select id="alarm-sound-select" class="select-input">
           <option value="melody">Melodia Dolce (Soft Fade-In)</option>
@@ -358,6 +414,7 @@
           <option value="stream">Ruscello & Natura (Soft Fade-In)</option>
           <option value="beep">Beep Classico</option>
         </select>
+
         <button id="btn-toggle-alarm" class="btn-opt" onclick="toggleAlarm()">
           <i class="fa-solid fa-bell"></i> ATTIVA SVEGLIA
         </button>
@@ -406,7 +463,11 @@
     let audioCtx = null;
     let activeOscillators = [];
 
-    let alarmTime = localStorage.getItem('og_alarm_time') || '';
+    // SELETTORE SVEGLIA
+    let selectedField = 'hours';
+    let alarmHours = 7;
+    let alarmMinutes = 0;
+    let alarmTime = localStorage.getItem('og_alarm_time') || '07:00';
     let isAlarmActive = localStorage.getItem('og_alarm_active') === 'true';
     let isRinging = false;
     let fadeInterval = null;
@@ -414,7 +475,7 @@
     let speechSynthUtterance = null;
     let batteryGuardActive = true;
 
-    // SBLOCCO MOTORE AUDIO AL TOCCO (FONDAMENTALE PER ANDROID)
+    // SBLOCCO MOTORE AUDIO AL TOCCO
     function unlockAudioContext() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -423,8 +484,39 @@
         audioCtx.resume();
       }
     }
-
     document.body.addEventListener('click', unlockAudioContext, { once: false });
+
+    function initPickerUI() {
+      if (alarmTime) {
+        const parts = alarmTime.split(':');
+        alarmHours = parseInt(parts[0], 10) || 7;
+        alarmMinutes = parseInt(parts[1], 10) || 0;
+      }
+      updatePickerDisplay();
+      updateAlarmBtnUI();
+    }
+
+    function selectPickerField(field) {
+      unlockAudioContext();
+      selectedField = field;
+      document.getElementById('picker-hours').classList.toggle('selected', field === 'hours');
+      document.getElementById('picker-minutes').classList.toggle('selected', field === 'minutes');
+    }
+
+    function adjustAlarmTime(delta) {
+      unlockAudioContext();
+      if (selectedField === 'hours') {
+        alarmHours = (alarmHours + delta + 24) % 24;
+      } else {
+        alarmMinutes = (alarmMinutes + delta + 60) % 60;
+      }
+      updatePickerDisplay();
+    }
+
+    function updatePickerDisplay() {
+      document.getElementById('picker-hours').innerText = String(alarmHours).padStart(2, '0');
+      document.getElementById('picker-minutes').innerText = String(alarmMinutes).padStart(2, '0');
+    }
 
     function initAnalogNumbers() {
       const clock = document.getElementById('analog-clock');
@@ -499,25 +591,20 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    function initAlarmUI() {
-      if (alarmTime) {
-        document.getElementById('alarm-time-input').value = alarmTime;
-      }
-      updateAlarmBtnUI();
-    }
-
     function toggleAlarm() {
       unlockAudioContext();
-      const inputVal = document.getElementById('alarm-time-input').value;
-      if (!inputVal) {
-        alert("Seleziona prima l'orario della sveglia!");
-        return;
-      }
-      alarmTime = inputVal;
+      const hStr = String(alarmHours).padStart(2, '0');
+      const mStr = String(alarmMinutes).padStart(2, '0');
+      alarmTime = `${hStr}:${mStr}`;
+
       isAlarmActive = !isAlarmActive;
       localStorage.setItem('og_alarm_time', alarmTime);
       localStorage.setItem('og_alarm_active', isAlarmActive);
+      
       updateAlarmBtnUI();
+      if (isAlarmActive) {
+        alert(`Sveglia impostata alle ore ${alarmTime} ed audio del browser sbloccato!`);
+      }
     }
 
     function updateAlarmBtnUI() {
@@ -537,7 +624,7 @@
       }
     }
 
-    initAlarmUI();
+    initPickerUI();
 
     function checkAlarm(hStr, mStr) {
       if (isAlarmActive && alarmTime === `${hStr}:${mStr}` && !isRinging) {
@@ -577,10 +664,9 @@
       fadeInterval = setInterval(announce, 4000);
     }
 
-    // MELODIA DOLCE CON FADE-IN PROGRESSIVO
     function playSoftMelodyAlarm() {
       unlockAudioContext();
-      const notes = [261.63, 329.63, 392.00, 523.25]; // Do - Mi - Sol - Do alto
+      const notes = [261.63, 329.63, 392.00, 523.25];
       let noteIndex = 0;
 
       function playNote() {
@@ -588,7 +674,7 @@
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
-        osc.type = 'sine'; // Tono dolcissimo
+        osc.type = 'sine';
         osc.frequency.setValueAtTime(notes[noteIndex], audioCtx.currentTime);
 
         gain.gain.setValueAtTime(currentVolume, audioCtx.currentTime);
@@ -604,7 +690,7 @@
         noteIndex = (noteIndex + 1) % notes.length;
 
         if (currentVolume < 0.8) {
-          currentVolume += 0.02; // Aumento morbido e graduale
+          currentVolume += 0.02;
         }
       }
 
