@@ -214,7 +214,6 @@
       margin-bottom: 8px;
     }
 
-    /* SELETTORE ORE E MINUTI CON FRECCETTE SU/GIU */
     .time-picker-container {
       display: flex;
       align-items: center;
@@ -312,6 +311,12 @@
       font-size: 14px;
       margin-bottom: 8px;
     }
+    .file-status-text {
+      font-size: 12px;
+      color: #00e676;
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
     .btn-close {
       background: #e53935;
       color: white;
@@ -396,7 +401,6 @@
         <div class="setting-title">🔔 Impostazione Sveglia</div>
         <div class="setting-desc">Seleziona Ore o Minuti e premi le freccette ▲ / ▼ per regolare l'orario.</div>
         
-        <!-- SELETTORE ORE E MINUTI CON FRECCETTE -->
         <div class="time-picker-container">
           <div id="picker-hours" class="time-box selected" onclick="selectPickerField('hours')">07</div>
           <div class="time-separator">:</div>
@@ -408,12 +412,21 @@
         </div>
 
         <div class="setting-title" style="margin-top: 6px;">Tipo di Suoneria Sveglia</div>
-        <select id="alarm-sound-select" class="select-input">
+        <select id="alarm-sound-select" class="select-input" onchange="handleSoundSelectChange()">
+          <option value="custom">File MP3 Personale (Celtica / Tuo brano)</option>
           <option value="melody">Melodia Dolce (Soft Fade-In)</option>
           <option value="speech">Ora Parlata in Italiano (Soft Fade-In)</option>
-          <option value="stream">Ruscello & Natura (Soft Fade-In)</option>
           <option value="beep">Beep Classico</option>
         </select>
+
+        <!-- SELEZIONE ED INFO FILE MP3 PERSONALE -->
+        <div id="custom-mp3-box">
+          <input type="file" id="mp3-file-input" accept="audio/mp3,audio/*" style="display:none;" onchange="handleFileSelect(event)">
+          <button class="btn-opt" onclick="document.getElementById('mp3-file-input').click()">
+            <i class="fa-solid fa-music"></i> CARICA MP3 DAL TELEFONO
+          </button>
+          <div id="file-status-text" class="file-status-text">Nessun file MP3 selezionato</div>
+        </div>
 
         <button id="btn-toggle-alarm" class="btn-opt" onclick="toggleAlarm()">
           <i class="fa-solid fa-bell"></i> ATTIVA SVEGLIA
@@ -462,20 +475,36 @@
     let wakeLock = null;
     let audioCtx = null;
     let activeOscillators = [];
+    let customAudioElement = null;
+
+    // DATABASE INDEXEDDB PER MEMORIZZARE L'MP3 IN MODO PERMANENTE
+    let db = null;
+    const dbRequest = indexedDB.open("OrologioGeminiDB", 1);
+    dbRequest.onupgradeneeded = (e) => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains("audioStore")) {
+        db.createObjectStore("audioStore");
+      }
+    };
+    dbRequest.onsuccess = (e) => {
+      db = e.target.result;
+      loadSavedMP3();
+    };
 
     // SELETTORE SVEGLIA
     let selectedField = 'hours';
     let alarmHours = 7;
     let alarmMinutes = 0;
     let alarmTime = localStorage.getItem('og_alarm_time') || '07:00';
+    let soundChoice = localStorage.getItem('og_sound_choice') || 'custom';
     let isAlarmActive = localStorage.getItem('og_alarm_active') === 'true';
     let isRinging = false;
     let fadeInterval = null;
     let currentVolume = 0.05;
     let speechSynthUtterance = null;
     let batteryGuardActive = true;
+    let savedMP3Blob = null;
 
-    // SBLOCCO MOTORE AUDIO AL TOCCO
     function unlockAudioContext() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -492,8 +521,55 @@
         alarmHours = parseInt(parts[0], 10) || 7;
         alarmMinutes = parseInt(parts[1], 10) || 0;
       }
+      document.getElementById('alarm-sound-select').value = soundChoice;
+      handleSoundSelectChange();
       updatePickerDisplay();
       updateAlarmBtnUI();
+    }
+
+    function handleSoundSelectChange() {
+      soundChoice = document.getElementById('alarm-sound-select').value;
+      localStorage.setItem('og_sound_choice', soundChoice);
+      const mp3Box = document.getElementById('custom-mp3-box');
+      mp3Box.style.display = soundChoice === 'custom' ? 'block' : 'none';
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const blob = new Blob([e.target.result], { type: file.type });
+        savedMP3Blob = blob;
+
+        if (db) {
+          const tx = db.transaction("audioStore", "readwrite");
+          tx.objectStore("audioStore").put(blob, "customAlarmMP3");
+          tx.objectStore("audioStore").put(file.name, "customAlarmFileName");
+        }
+
+        document.getElementById('file-status-text').innerText = `🎵 Caricato: ${file.name}`;
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function loadSavedMP3() {
+      if (!db) return;
+      const tx = db.transaction("audioStore", "readonly");
+      const reqBlob = tx.objectStore("audioStore").get("customAlarmMP3");
+      const reqName = tx.objectStore("audioStore").get("customAlarmFileName");
+
+      reqBlob.onsuccess = () => {
+        if (reqBlob.result) {
+          savedMP3Blob = reqBlob.result;
+        }
+      };
+      reqName.onsuccess = () => {
+        if (reqName.result) {
+          document.getElementById('file-status-text').innerText = `🎵 In uso: ${reqName.result}`;
+        }
+      };
     }
 
     function selectPickerField(field) {
@@ -603,7 +679,7 @@
       
       updateAlarmBtnUI();
       if (isAlarmActive) {
-        alert(`Sveglia impostata alle ore ${alarmTime} ed audio del browser sbloccato!`);
+        alert(`Sveglia impostata alle ore ${alarmTime} con audio sbloccato!`);
       }
     }
 
@@ -638,15 +714,32 @@
       document.getElementById('alarm-ring-modal').style.display = 'flex';
       document.getElementById('alarm-ring-sub').innerText = `Sono le ore ${hStr}:${mStr}`;
       currentVolume = 0.05;
-      const soundType = document.getElementById('alarm-sound-select').value;
 
-      if (soundType === 'speech') {
+      if (soundChoice === 'custom' && savedMP3Blob) {
+        playCustomMP3Alarm();
+      } else if (soundChoice === 'speech') {
         playSpeechAlarm(hStr, mStr);
-      } else if (soundType === 'melody') {
+      } else if (soundChoice === 'melody') {
         playSoftMelodyAlarm();
       } else {
         playBeepAlarm();
       }
+    }
+
+    // RIPRODUZIONE MP3 CON FADE-IN PROGRESSIVO
+    function playCustomMP3Alarm() {
+      const audioUrl = URL.createObjectURL(savedMP3Blob);
+      customAudioElement = new Audio(audioUrl);
+      customAudioElement.loop = true;
+      customAudioElement.volume = currentVolume;
+      customAudioElement.play();
+
+      fadeInterval = setInterval(() => {
+        if (customAudioElement && currentVolume < 1.0) {
+          currentVolume = Math.min(1.0, currentVolume + 0.05);
+          customAudioElement.volume = currentVolume;
+        }
+      }, 1500);
     }
 
     function playSpeechAlarm(hStr, mStr) {
@@ -723,6 +816,10 @@
       document.getElementById('alarm-ring-modal').style.display = 'none';
       if (fadeInterval) clearInterval(fadeInterval);
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (customAudioElement) {
+        customAudioElement.pause();
+        customAudioElement = null;
+      }
       activeOscillators.forEach(osc => { try { osc.stop(); } catch(e){} });
       activeOscillators = [];
     }
