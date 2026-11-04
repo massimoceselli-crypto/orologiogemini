@@ -311,12 +311,35 @@
       font-size: 14px;
       margin-bottom: 8px;
     }
+
+    /* PULSANTE FILE VISIBILE */
+    .file-input-wrapper {
+      margin: 10px 0;
+    }
+    .file-input-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #00bcd4;
+      color: #000;
+      font-weight: bold;
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .file-input-real {
+      display: none;
+    }
     .file-status-text {
       font-size: 12px;
       color: #00e676;
-      margin-bottom: 8px;
+      margin-top: 6px;
       word-break: break-all;
+      text-align: center;
     }
+
     .btn-close {
       background: #e53935;
       color: white;
@@ -419,12 +442,12 @@
           <option value="beep">Beep Classico</option>
         </select>
 
-        <!-- SELEZIONE ED INFO FILE MP3 PERSONALE -->
-        <div id="custom-mp3-box">
-          <input type="file" id="mp3-file-input" accept="audio/mp3,audio/*" style="display:none;" onchange="handleFileSelect(event)">
-          <button class="btn-opt" onclick="document.getElementById('mp3-file-input').click()">
-            <i class="fa-solid fa-music"></i> CARICA MP3 DAL TELEFONO
-          </button>
+        <!-- SELEZIONE FILE MP3 CON LABEL DIRETTA -->
+        <div id="custom-mp3-box" class="file-input-wrapper">
+          <label for="mp3-file-input" class="file-input-label">
+            <i class="fa-solid fa-music"></i> SCEGLI FILE MP3 DAL TELEFONO
+          </label>
+          <input type="file" id="mp3-file-input" class="file-input-real" accept="audio/*,.mp3" onchange="handleFileSelect(event)">
           <div id="file-status-text" class="file-status-text">Nessun file MP3 selezionato</div>
         </div>
 
@@ -477,7 +500,7 @@
     let activeOscillators = [];
     let customAudioElement = null;
 
-    // DATABASE INDEXEDDB PER MEMORIZZARE L'MP3 IN MODO PERMANENTE
+    // DATABASE INDEXEDDB
     let db = null;
     const dbRequest = indexedDB.open("OrologioGeminiDB", 1);
     dbRequest.onupgradeneeded = (e) => {
@@ -491,7 +514,6 @@
       loadSavedMP3();
     };
 
-    // SELETTORE SVEGLIA
     let selectedField = 'hours';
     let alarmHours = 7;
     let alarmMinutes = 0;
@@ -726,7 +748,6 @@
       }
     }
 
-    // RIPRODUZIONE MP3 CON FADE-IN PROGRESSIVO
     function playCustomMP3Alarm() {
       const audioUrl = URL.createObjectURL(savedMP3Blob);
       customAudioElement = new Audio(audioUrl);
