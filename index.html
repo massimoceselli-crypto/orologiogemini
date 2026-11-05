@@ -4,7 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>OROLOGIO GEMINI</title>
+  
+  <!-- PWA & Meta-Tag per installazione su Schermata Home (Step 11) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#050505">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Orologio Gemini">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3103/3103030.png">
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
   <style>
     * {
       box-sizing: border-box;
@@ -26,18 +36,19 @@
       align-items: center;
     }
 
+    /* PULSANTI NEGLI ANGOLI */
     .corner-btn {
       position: absolute;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
       color: #fff;
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 22px;
       cursor: pointer;
       backdrop-filter: blur(10px);
       transition: all 0.2s ease;
@@ -52,6 +63,7 @@
     .bottom-left { bottom: 18px; left: 18px; }
     .bottom-right { bottom: 18px; right: 18px; }
 
+    /* SCHERMATA OROLOGIO */
     .clock-container {
       display: flex;
       flex-direction: column;
@@ -64,61 +76,66 @@
     }
 
     .time-digital {
-      font-size: clamp(3.5rem, 16vw, 10rem);
+      font-size: clamp(4rem, 18vw, 11rem);
       font-weight: 800;
       font-family: 'Courier New', Courier, monospace;
       letter-spacing: -2px;
       color: #00bcd4;
-      text-shadow: 0 0 30px rgba(0, 188, 212, 0.5);
+      text-shadow: 0 0 35px rgba(0, 188, 212, 0.6);
       line-height: 1;
     }
 
+    /* STEP 8: INGRANDIMENTO E LEGGIBILITÀ DATA */
     .date-display {
-      font-size: clamp(1.1rem, 3.5vw, 2.2rem);
-      color: #b0b0b0;
-      margin-top: 15px;
-      font-weight: 600;
+      font-size: clamp(1.4rem, 4.5vw, 2.8rem);
+      color: #ffffff;
+      margin-top: 20px;
+      font-weight: 700;
       text-transform: capitalize;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
     }
 
+    /* STEP 6 & 7: BARRA INFORMAZIONI METEO / PRESSIONE / UMIDITÀ */
     .info-bar {
       display: flex;
-      gap: 15px;
-      margin-top: 12px;
-      font-size: 14px;
+      gap: 18px;
+      margin-top: 16px;
+      font-size: 16px;
       color: #ffb74d;
-      font-weight: 600;
+      font-weight: 700;
       flex-wrap: wrap;
       justify-content: center;
     }
 
     .alarm-status-bar {
-      margin-top: 10px;
-      font-size: 14px;
+      margin-top: 12px;
+      font-size: 16px;
       color: #00e676;
       font-weight: bold;
       display: none;
       align-items: center;
-      gap: 6px;
-      background: rgba(0, 230, 118, 0.1);
-      padding: 6px 14px;
+      gap: 8px;
+      background: rgba(0, 230, 118, 0.15);
+      padding: 8px 18px;
       border-radius: 20px;
-      border: 1px solid rgba(0, 230, 118, 0.3);
+      border: 1px solid rgba(0, 230, 118, 0.4);
     }
 
+    /* STEP 4: QUADRANTE ANALOGICO CON TACCHE E FRECCE SULLE LANCETTE */
     .analog-clock {
-      width: clamp(240px, 55vh, 420px);
-      height: clamp(240px, 55vh, 420px);
+      width: clamp(260px, 58vh, 440px);
+      height: clamp(260px, 58vh, 440px);
       border: 6px solid #00bcd4;
       border-radius: 50%;
       position: relative;
-      box-shadow: 0 0 35px rgba(0, 188, 212, 0.3);
+      box-shadow: 0 0 40px rgba(0, 188, 212, 0.35);
       display: none;
-      background: rgba(10, 10, 10, 0.9);
+      background: rgba(10, 10, 10, 0.95);
     }
     .analog-center {
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       background: #00bcd4;
       border-radius: 50%;
       position: absolute;
@@ -132,21 +149,42 @@
       bottom: 50%;
       left: 50%;
       transform-origin: bottom center;
-      border-radius: 6px;
+      border-radius: 4px;
     }
+    /* FRECCETTE SULLE PUNTE DELLE LANCETTE */
     .hand.hour {
-      width: 7px;
+      width: 8px;
       height: 28%;
       background: #ffffff;
       transform: translateX(-50%);
       z-index: 3;
     }
+    .hand.hour::after {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-bottom: 12px solid #ffffff;
+    }
     .hand.minute {
-      width: 4px;
+      width: 5px;
       height: 40%;
       background: #00bcd4;
       transform: translateX(-50%);
       z-index: 4;
+    }
+    .hand.minute::after {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 12px solid #00bcd4;
     }
     .hand.second {
       width: 2px;
@@ -155,22 +193,42 @@
       transform: translateX(-50%);
       z-index: 5;
     }
+    .hand.second::after {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 10px solid #ff9800;
+    }
     .clock-number {
       position: absolute;
-      width: 30px;
-      height: 30px;
+      width: 34px;
+      height: 34px;
       text-align: center;
-      line-height: 30px;
-      font-size: 16px;
+      line-height: 34px;
+      font-size: 18px;
       font-weight: bold;
       color: #00bcd4;
     }
+    .minute-tick {
+      position: absolute;
+      width: 2px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.4);
+      left: 50%;
+      top: 6px;
+      transform-origin: 50% clamp(124px, 28vh, 214px);
+    }
 
+    /* MODALE E STRUTTURA MENU A TENDINA (STEP 1 & STEP 5) */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.93);
-      backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.94);
+      backdrop-filter: blur(14px);
       z-index: 100;
       display: none;
       align-items: center;
@@ -178,86 +236,130 @@
       padding: 15px;
     }
     .modal-card {
-      background: #181818;
+      background: #161616;
       border: 2px solid #00bcd4;
-      border-radius: 20px;
-      padding: 22px;
-      max-width: 440px;
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 460px;
       width: 100%;
-      max-height: 88vh;
+      max-height: 90vh;
       overflow-y: auto;
       text-align: center;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95);
     }
+    /* STEP 5: TESTI E INTESTAZIONI PIÙ GRANDE E LEGGIBILI */
     .modal-card h2 {
       color: #00bcd4;
-      margin-bottom: 16px;
-      font-size: 20px;
+      margin-bottom: 18px;
+      font-size: 22px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
     .setting-group {
-      background: #222;
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 14px;
+      background: #202020;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
       text-align: left;
+      border: 1px solid #333;
     }
     .setting-title {
-      font-size: 13px;
+      font-size: 15px;
       color: #00bcd4;
       text-transform: uppercase;
-      font-weight: bold;
-      margin-bottom: 4px;
+      font-weight: 800;
+      margin-bottom: 6px;
     }
     .setting-desc {
-      font-size: 11px;
-      color: #aaa;
-      margin-bottom: 8px;
+      font-size: 13px;
+      color: #cccccc;
+      margin-bottom: 12px;
+      line-height: 1.4;
     }
 
+    /* BOTTONI NAVIGAZIONE MENU PRINCIPALE */
+    .menu-item-btn {
+      width: 100%;
+      padding: 16px;
+      background: #2a2a2a;
+      color: #ffffff;
+      border: 1px solid #444;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+    .menu-item-btn:active {
+      background: #00bcd4;
+      color: #000;
+    }
+    .btn-back {
+      background: #333;
+      color: #ffb74d;
+      border: 1px solid #ffb74d;
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* STEP 2 & 10: SELEZIONE CON FRECCETTE ▲ / ▼ */
     .time-picker-container {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      margin: 12px 0;
+      gap: 14px;
+      margin: 14px 0;
       background: #111;
-      padding: 10px;
-      border-radius: 12px;
+      padding: 12px;
+      border-radius: 14px;
       border: 1px solid #333;
     }
     .time-box {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: bold;
       color: #fff;
-      padding: 6px 14px;
+      padding: 8px 16px;
       background: #252525;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
       border: 2px solid transparent;
     }
     .time-box.selected {
       border-color: #00bcd4;
       color: #00bcd4;
-      background: #102a30;
+      background: #0a252a;
     }
     .time-separator {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: bold;
       color: #00bcd4;
     }
     .arrow-btns {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
     .btn-arrow {
       background: #333;
       color: #00bcd4;
       border: 1px solid #555;
-      width: 40px;
-      height: 34px;
-      border-radius: 6px;
-      font-size: 16px;
+      width: 46px;
+      height: 38px;
+      border-radius: 8px;
+      font-size: 18px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -268,54 +370,40 @@
       color: #000;
     }
 
-    .color-picker-row {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 8px;
-    }
-    .color-dot {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 3px solid transparent;
-    }
     .btn-opt {
       width: 100%;
-      padding: 12px;
-      background: #333;
+      padding: 14px;
+      background: #2c2c2c;
       color: white;
       border: 1px solid #555;
-      border-radius: 10px;
-      font-size: 14px;
+      border-radius: 12px;
+      font-size: 15px;
       font-weight: bold;
       cursor: pointer;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
     }
     .btn-opt.active {
       background: #00bcd4;
       color: #000;
       border-color: #00bcd4;
     }
+
     .select-input {
       width: 100%;
-      padding: 10px;
-      background: #333;
+      padding: 12px;
+      background: #2c2c2c;
       color: #fff;
       border: 1px solid #555;
-      border-radius: 8px;
-      font-size: 14px;
-      margin-bottom: 8px;
+      border-radius: 10px;
+      font-size: 15px;
+      margin-bottom: 10px;
     }
 
-    /* PULSANTE FILE VISIBILE */
-    .file-input-wrapper {
-      margin: 10px 0;
-    }
+    .file-input-wrapper { margin: 10px 0; }
     .file-input-label {
       display: flex;
       align-items: center;
@@ -324,20 +412,31 @@
       background: #00bcd4;
       color: #000;
       font-weight: bold;
-      padding: 12px;
+      padding: 14px;
       border-radius: 10px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 15px;
     }
-    .file-input-real {
-      display: none;
-    }
+    .file-input-real { display: none; }
     .file-status-text {
-      font-size: 12px;
+      font-size: 13px;
       color: #00e676;
-      margin-top: 6px;
+      margin-top: 8px;
       word-break: break-all;
       text-align: center;
+    }
+
+    .color-picker-row {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 10px;
+    }
+    .color-dot {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
     }
 
     .btn-close {
@@ -345,19 +444,20 @@
       color: white;
       border: none;
       width: 100%;
-      padding: 14px;
-      border-radius: 12px;
+      padding: 16px;
+      border-radius: 14px;
       font-weight: bold;
-      font-size: 15px;
+      font-size: 16px;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 12px;
     }
 
+    /* SCHERMATA RINGING SVEGLIA/COUNTDOWN */
     #alarm-ring-modal {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(229, 57, 53, 0.95);
+      background: rgba(229, 57, 53, 0.96);
       z-index: 200;
       flex-direction: column;
       align-items: center;
@@ -369,19 +469,19 @@
       background: white;
       color: #d32f2f;
       border: none;
-      padding: 18px 40px;
+      padding: 20px 48px;
       border-radius: 50px;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 800;
       cursor: pointer;
-      margin-top: 25px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      margin-top: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
   </style>
 </head>
 <body>
   <button class="corner-btn top-left" onclick="toggleFullscreen()" title="Schermo Intero"><i class="fa-solid fa-expand"></i></button>
-  <button class="corner-btn top-right" onclick="openSettings()" title="Settaggi Generali"><i class="fa-solid fa-gear"></i></button>
+  <button class="corner-btn top-right" onclick="openSettings()" title="Menu Impostazioni"><i class="fa-solid fa-gear"></i></button>
   <button class="corner-btn bottom-left" onclick="toggleClockStyle()" title="Cambia Vista"><i class="fa-solid fa-rotate"></i></button>
   <button class="corner-btn bottom-right" onclick="toggleWakeLock()" title="Schermo Sempre Acceso"><i id="lock-icon" class="fa-solid fa-lightbulb" style="color:#ffeb3b;"></i></button>
 
@@ -395,103 +495,207 @@
       <div id="min-hand" class="hand minute"></div>
       <div id="sec-hand" class="hand second"></div>
     </div>
+    
+    <!-- STEP 8: DATA INGRANDITA -->
     <div id="date-display" class="date-display">Caricamento data...</div>
 
+    <!-- BADGE SVEGLIA ATTIVA (STEP 2) -->
     <div id="alarm-status-bar" class="alarm-status-bar">
-      <i class="fa-solid fa-bell"></i> Sveglia attiva per le <span id="alarm-status-time">--:--</span>
+      <i class="fa-solid fa-bell"></i> Sveglia impostata alle <span id="alarm-status-time">--:--</span>
     </div>
 
+    <!-- STEP 6 & 7: METEO, UMIDITÀ DOPPIA E PRESSIONE HPA -->
     <div class="info-bar">
-      <div><i class="fa-solid fa-cloud-sun"></i> <span id="weather-text">Meteo GPS...</span></div>
-      <div><i class="fa-solid fa-droplet"></i> <span id="humidity-text">--%</span></div>
-      <div><i class="fa-solid fa-gauge-high"></i> <span id="pressure-text">-- hPa</span></div>
+      <div><i class="fa-solid fa-cloud-sun"></i> <span id="weather-text">Meteo...</span></div>
+      <div><i class="fa-solid fa-droplet"></i> Int. <span id="hum-int">45%</span> | Est. <span id="hum-ext">--%</span></div>
+      <div><i class="fa-solid fa-gauge-high"></i> Pressione: <span id="pressure-text">-- hPa</span></div>
       <div><i class="fa-solid fa-battery-three-quarters"></i> <span id="battery-text">--%</span></div>
     </div>
   </div>
 
+  <!-- SCHERMATA ALLARME / STOP -->
   <div id="alarm-ring-modal">
-    <i class="fa-solid fa-bell-concierge" style="font-size: 80px; color: white;"></i>
-    <h1 style="font-size: 44px; color: white; margin-top: 10px;">⏰ SVEGLIA!</h1>
-    <p id="alarm-ring-sub" style="font-size: 20px; color: white;">È ora di alzarsi!</p>
-    <button class="btn-stop-alarm" onclick="stopAlarmRinging()">SPEGNI SVEGLIA</button>
+    <i id="alarm-ring-icon" class="fa-solid fa-bell-concierge" style="font-size: 90px; color: white;"></i>
+    <h1 id="alarm-ring-title" style="font-size: 46px; color: white; margin-top: 15px;">⏰ SVEGLIA!</h1>
+    <p id="alarm-ring-sub" style="font-size: 22px; color: white;">È ora di alzarsi!</p>
+    <button class="btn-stop-alarm" onclick="stopAlarmRinging()">SPEGNI / STOP</button>
   </div>
 
+  <!-- MODALE PRINCIPALE IMPOSTAZIONI (STEP 1) -->
   <div id="settings-modal" class="modal-overlay">
     <div class="modal-card">
-      <h2>⚙️ SETTAGGI GENERALI</h2>
+      <h2 id="modal-title">⚙️ IMPOSTAZIONI</h2>
 
-      <div class="setting-group">
-        <div class="setting-title">🔔 Impostazione Sveglia</div>
-        <div class="setting-desc">Seleziona Ore o Minuti e premi le freccette ▲ / ▼ per regolare l'orario.</div>
-        
-        <div class="time-picker-container">
-          <div id="picker-hours" class="time-box selected" onclick="selectPickerField('hours')">07</div>
-          <div class="time-separator">:</div>
-          <div id="picker-minutes" class="time-box" onclick="selectPickerField('minutes')">00</div>
-          <div class="arrow-btns">
-            <button class="btn-arrow" onclick="adjustAlarmTime(1)"><i class="fa-solid fa-chevron-up"></i></button>
-            <button class="btn-arrow" onclick="adjustAlarmTime(-1)"><i class="fa-solid fa-chevron-down"></i></button>
+      <!-- MENU PRINCIPALE A TENDINA (VISTA PRINCIPALE) -->
+      <div id="menu-main-view">
+        <button class="menu-item-btn" onclick="openSubMenu('alarm')">
+          <span><i class="fa-solid fa-bell" style="color:#00bcd4; margin-right:10px;"></i> 🔔 Impostazione Sveglia</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+
+        <button class="menu-item-btn" onclick="openSubMenu('sounds')">
+          <span><i class="fa-solid fa-music" style="color:#00bcd4; margin-right:10px;"></i> 🎵 Suoni Sveglia e MP3</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+
+        <button class="menu-item-btn" onclick="openSubMenu('quadrant')">
+          <span><i class="fa-solid fa-clock" style="color:#00bcd4; margin-right:10px;"></i> 🖥️ Quadrante (Analogico/Digitale)</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+
+        <button class="menu-item-btn" onclick="openSubMenu('timer')">
+          <span><i class="fa-solid fa-stopwatch" style="color:#00bcd4; margin-right:10px;"></i> ⏱️ Timer / Cronometro</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+
+        <button class="menu-item-btn" onclick="openSubMenu('countdown')">
+          <span><i class="fa-solid fa-hourglass-half" style="color:#00bcd4; margin-right:10px;"></i> ⏳ Conto alla Rovescia</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+
+        <button class="menu-item-btn" onclick="openSubMenu('display')">
+          <span><i class="fa-solid fa-palette" style="color:#00bcd4; margin-right:10px;"></i> 🎨 Colore e Batteria</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+
+        <button class="btn-close" onclick="closeSettings()">CHIUDI IMPOSTAZIONI</button>
+      </div>
+
+      <!-- SOTTOMENU 1: SVEGLIA (STEP 2) -->
+      <div id="submenu-alarm" style="display:none;">
+        <div class="setting-group">
+          <div class="setting-title">Imposta Orario Sveglia</div>
+          <div class="setting-desc">Tocca Ore o Minuti e usa le freccette ▲ / ▼. Di default parte da 00:00.</div>
+          
+          <div class="time-picker-container">
+            <div id="alarm-picker-hours" class="time-box selected" onclick="selectAlarmPickerField('hours')">00</div>
+            <div class="time-separator">:</div>
+            <div id="alarm-picker-minutes" class="time-box" onclick="selectAlarmPickerField('minutes')">00</div>
+            <div class="arrow-btns">
+              <button class="btn-arrow" onclick="adjustAlarmTime(1)"><i class="fa-solid fa-chevron-up"></i></button>
+              <button class="btn-arrow" onclick="adjustAlarmTime(-1)"><i class="fa-solid fa-chevron-down"></i></button>
+            </div>
+          </div>
+
+          <button id="btn-toggle-alarm" class="btn-opt" onclick="toggleAlarm()">
+            <i class="fa-solid fa-bell"></i> SALVA E ATTIVA SVEGLIA
+          </button>
+        </div>
+        <button class="btn-back" onclick="showMainMenu()"><i class="fa-solid fa-arrow-left"></i> Indietro al Menu Principale</button>
+      </div>
+
+      <!-- SOTTOMENU 2: SUONI & MP3 (STEP 3) -->
+      <div id="submenu-sounds" style="display:none;">
+        <div class="setting-group">
+          <div class="setting-title">Selezione Suoneria Sveglia</div>
+          <div class="setting-desc">Tutti i suoni partono con volume in Fade-In graduale.</div>
+          
+          <select id="alarm-sound-select" class="select-input" onchange="handleSoundSelectChange()">
+            <option value="custom">File MP3 Personale (Celtica / Tuo brano)</option>
+            <option value="melody">Melodia Dolce (Soft Fade-In)</option>
+            <option value="speech">Ora Parlata in Italiano (Soft Fade-In)</option>
+            <option value="beep">Beep Classico</option>
+          </select>
+
+          <div id="custom-mp3-box" class="file-input-wrapper">
+            <label for="mp3-file-input" class="file-input-label">
+              <i class="fa-solid fa-music"></i> CARICA FILE MP3 DAL TELEFONO
+            </label>
+            <input type="file" id="mp3-file-input" class="file-input-real" accept="audio/*,.mp3" onchange="handleFileSelect(event)">
+            <div id="file-status-text" class="file-status-text">Nessun file MP3 selezionato</div>
           </div>
         </div>
+        <button class="btn-back" onclick="showMainMenu()"><i class="fa-solid fa-arrow-left"></i> Indietro al Menu Principale</button>
+      </div>
 
-        <div class="setting-title" style="margin-top: 6px;">Tipo di Suoneria Sveglia</div>
-        <select id="alarm-sound-select" class="select-input" onchange="handleSoundSelectChange()">
-          <option value="custom">File MP3 Personale (Celtica / Tuo brano)</option>
-          <option value="melody">Melodia Dolce (Soft Fade-In)</option>
-          <option value="speech">Ora Parlata in Italiano (Soft Fade-In)</option>
-          <option value="beep">Beep Classico</option>
-        </select>
-
-        <!-- SELEZIONE FILE MP3 CON LABEL DIRETTA -->
-        <div id="custom-mp3-box" class="file-input-wrapper">
-          <label for="mp3-file-input" class="file-input-label">
-            <i class="fa-solid fa-music"></i> SCEGLI FILE MP3 DAL TELEFONO
-          </label>
-          <input type="file" id="mp3-file-input" class="file-input-real" accept="audio/*,.mp3" onchange="handleFileSelect(event)">
-          <div id="file-status-text" class="file-status-text">Nessun file MP3 selezionato</div>
+      <!-- SOTTOMENU 3: QUADRANTI (STEP 4) -->
+      <div id="submenu-quadrant" style="display:none;">
+        <div class="setting-group">
+          <div class="setting-title">Stile dell'Orologio</div>
+          <div class="setting-desc">L'analogico include le 4 tacche intermedie dei minuti e lancette con freccette.</div>
+          <button id="btn-mode-digital" class="btn-opt active" onclick="setClockMode('digital')">
+            <i class="fa-solid fa-digital-tachograph"></i> DIGITALE
+          </button>
+          <button id="btn-mode-analog" class="btn-opt" onclick="setClockMode('analog')">
+            <i class="fa-solid fa-clock"></i> ANALOGICO (CON TACCHE E FRECCE)
+          </button>
         </div>
-
-        <button id="btn-toggle-alarm" class="btn-opt" onclick="toggleAlarm()">
-          <i class="fa-solid fa-bell"></i> ATTIVA SVEGLIA
-        </button>
+        <button class="btn-back" onclick="showMainMenu()"><i class="fa-solid fa-arrow-left"></i> Indietro al Menu Principale</button>
       </div>
 
-      <div class="setting-group">
-        <div class="setting-title">🖥️ Stile dell'Orologio</div>
-        <div class="setting-desc">Scegli la modalità di visualizzazione principale.</div>
-        <button id="btn-mode-digital" class="btn-opt active" onclick="setClockMode('digital')">
-          <i class="fa-solid fa-digital-tachograph"></i> DIGITALE
-        </button>
-        <button id="btn-mode-analog" class="btn-opt" onclick="setClockMode('analog')">
-          <i class="fa-solid fa-clock"></i> ANALOGICO (CON NUMERI)
-        </button>
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-title">🎨 Colore Neon Cifre</div>
-        <div class="setting-desc">Personalizza il colore del display e del quadrante.</div>
-        <div class="color-picker-row">
-          <div class="color-dot" style="background: #00bcd4;" onclick="changeColor('#00bcd4')"></div>
-          <div class="color-dot" style="background: #ff9800;" onclick="changeColor('#ff9800')"></div>
-          <div class="color-dot" style="background: #00e676;" onclick="changeColor('#00e676')"></div>
-          <div class="color-dot" style="background: #e91e63;" onclick="changeColor('#e91e63')"></div>
-          <div class="color-dot" style="background: #ffffff;" onclick="changeColor('#ffffff')"></div>
+      <!-- SOTTOMENU 4: TIMER / CRONOMETRO (STEP 9) -->
+      <div id="submenu-timer" style="display:none;">
+        <div class="setting-group">
+          <div class="setting-title">⏱️ Cronometro Avanzamento</div>
+          <div class="setting-desc">Visualizza Minuti, Secondi e Centesimi di secondo.</div>
+          <div id="timer-display-text" style="font-size:36px; font-weight:bold; color:#00bcd4; margin:15px 0; font-family:monospace;">00m 00s 00cs</div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-opt" style="background:#00e676; color:#000;" onclick="startTimer()"><i class="fa-solid fa-play"></i> AVVIA</button>
+            <button class="btn-opt" style="background:#e53935; color:#fff;" onclick="stopTimer()"><i class="fa-solid fa-stop"></i> STOP</button>
+            <button class="btn-opt" onclick="resetTimer()"><i class="fa-solid fa-rotate-left"></i> RESET</button>
+          </div>
         </div>
+        <button class="btn-back" onclick="showMainMenu()"><i class="fa-solid fa-arrow-left"></i> Indietro al Menu Principale</button>
       </div>
 
-      <div class="setting-group">
-        <div class="setting-title">🔋 Salva Batteria (15%)</div>
-        <div class="setting-desc">Spegne lo schermo in automatico se la batteria è quasi scarica.</div>
-        <button id="btn-battery-guard" class="btn-opt active" onclick="toggleBatteryGuard()">
-          <i class="fa-solid fa-shield-halved"></i> PROTEZIONE ATTIVA (15%)
-        </button>
+      <!-- SOTTOMENU 5: CONTO ALLA ROVESCIA (STEP 10) -->
+      <div id="submenu-countdown" style="display:none;">
+        <div class="setting-group">
+          <div class="setting-title">⏳ Conto alla Rovescia</div>
+          <div class="setting-desc">Regola Ore, Minuti e Secondi con le freccette ▲ / ▼.</div>
+
+          <div class="time-picker-container">
+            <div id="cd-field-hours" class="time-box selected" onclick="selectCDField('hours')">00</div>
+            <div class="time-separator">:</div>
+            <div id="cd-field-minutes" class="time-box" onclick="selectCDField('minutes')">05</div>
+            <div class="time-separator">:</div>
+            <div id="cd-field-seconds" class="time-box" onclick="selectCDField('seconds')">00</div>
+            <div class="arrow-btns">
+              <button class="btn-arrow" onclick="adjustCDTime(1)"><i class="fa-solid fa-chevron-up"></i></button>
+              <button class="btn-arrow" onclick="adjustCDTime(-1)"><i class="fa-solid fa-chevron-down"></i></button>
+            </div>
+          </div>
+
+          <div id="cd-display-text" style="font-size:32px; font-weight:bold; color:#00e676; margin:10px 0; font-family:monospace;">00:05:00</div>
+
+          <div style="display:flex; gap:10px;">
+            <button class="btn-opt" style="background:#00bcd4; color:#000;" onclick="startCountdown()"><i class="fa-solid fa-play"></i> AVVIA CONTO</button>
+            <button class="btn-opt" style="background:#e53935; color:#fff;" onclick="stopCountdown()"><i class="fa-solid fa-pause"></i> PAUSA/STOP</button>
+          </div>
+        </div>
+        <button class="btn-back" onclick="showMainMenu()"><i class="fa-solid fa-arrow-left"></i> Indietro al Menu Principale</button>
       </div>
 
-      <button class="btn-close" onclick="closeSettings()">SALVA E CHIUDI</button>
+      <!-- SOTTOMENU 6: COLORE E BATTERIA -->
+      <div id="submenu-display" style="display:none;">
+        <div class="setting-group">
+          <div class="setting-title">Colore Neon Cifre</div>
+          <div class="color-picker-row">
+            <div class="color-dot" style="background: #00bcd4;" onclick="changeColor('#00bcd4')"></div>
+            <div class="color-dot" style="background: #ff9800;" onclick="changeColor('#ff9800')"></div>
+            <div class="color-dot" style="background: #00e676;" onclick="changeColor('#00e676')"></div>
+            <div class="color-dot" style="background: #e91e63;" onclick="changeColor('#e91e63')"></div>
+            <div class="color-dot" style="background: #ffffff;" onclick="changeColor('#ffffff')"></div>
+          </div>
+        </div>
+        <div class="setting-group">
+          <div class="setting-title">Protezione Batteria (15%)</div>
+          <button id="btn-battery-guard" class="btn-opt active" onclick="toggleBatteryGuard()">
+            <i class="fa-solid fa-shield-halved"></i> PROTEZIONE ATTIVA (15%)
+          </button>
+        </div>
+        <button class="btn-back" onclick="showMainMenu()"><i class="fa-solid fa-arrow-left"></i> Indietro al Menu Principale</button>
+      </div>
+
     </div>
   </div>
 
   <script>
+    // REGISTRAZIONE SERVICE WORKER PWA (STEP 11)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
     let clockMode = localStorage.getItem('og_mode') || 'digital';
     let currentColor = localStorage.getItem('og_color') || '#00bcd4';
     let showSeconds = true;
@@ -500,7 +704,7 @@
     let activeOscillators = [];
     let customAudioElement = null;
 
-    // DATABASE INDEXEDDB
+    // INDEXEDDB PER MP3 PERSISTENTE (STEP 3)
     let db = null;
     const dbRequest = indexedDB.open("OrologioGeminiDB", 1);
     dbRequest.onupgradeneeded = (e) => {
@@ -514,10 +718,11 @@
       loadSavedMP3();
     };
 
-    let selectedField = 'hours';
-    let alarmHours = 7;
+    // SVEGLIA (STEP 2: RESET DEFAULT 00:00)
+    let alarmSelectedField = 'hours';
+    let alarmHours = 0;
     let alarmMinutes = 0;
-    let alarmTime = localStorage.getItem('og_alarm_time') || '07:00';
+    let alarmTime = localStorage.getItem('og_alarm_time') || '';
     let soundChoice = localStorage.getItem('og_sound_choice') || 'custom';
     let isAlarmActive = localStorage.getItem('og_alarm_active') === 'true';
     let isRinging = false;
@@ -526,6 +731,18 @@
     let speechSynthUtterance = null;
     let batteryGuardActive = true;
     let savedMP3Blob = null;
+
+    // TIMER / CRONOMETRO (STEP 9)
+    let timerInterval = null;
+    let timerElapsedMs = 0;
+
+    // CONTO ALLA ROVESCIA (STEP 10)
+    let cdSelectedField = 'minutes';
+    let cdHours = 0;
+    let cdMinutes = 5;
+    let cdSeconds = 0;
+    let cdTotalSeconds = 300;
+    let cdInterval = null;
 
     function unlockAudioContext() {
       if (!audioCtx) {
@@ -537,40 +754,106 @@
     }
     document.body.addEventListener('click', unlockAudioContext, { once: false });
 
-    function initPickerUI() {
-      if (alarmTime) {
-        const parts = alarmTime.split(':');
-        alarmHours = parseInt(parts[0], 10) || 7;
-        alarmMinutes = parseInt(parts[1], 10) || 0;
-      }
-      document.getElementById('alarm-sound-select').value = soundChoice;
-      handleSoundSelectChange();
-      updatePickerDisplay();
-      updateAlarmBtnUI();
+    // MENU NAVIGAZIONE (STEP 1)
+    function openSubMenu(menuKey) {
+      document.getElementById('menu-main-view').style.display = 'none';
+      const subMenus = ['alarm', 'sounds', 'quadrant', 'timer', 'countdown', 'display'];
+      subMenus.forEach(sm => {
+        document.getElementById(`submenu-${sm}`).style.display = (sm === menuKey) ? 'block' : 'none';
+      });
+      const titles = {
+        alarm: '🔔 SVEGLIA',
+        sounds: '🎵 SUONI ED MP3',
+        quadrant: '🖥️ QUADRANTI',
+        timer: '⏱️ CRONOMETRO',
+        countdown: '⏳ CONTO ALLA ROVESCIA',
+        display: '🎨 COLORE E BATTERIA'
+      };
+      document.getElementById('modal-title').innerText = titles[menuKey] || 'IMPOSTAZIONI';
     }
 
+    function showMainMenu() {
+      const subMenus = ['alarm', 'sounds', 'quadrant', 'timer', 'countdown', 'display'];
+      subMenus.forEach(sm => {
+        document.getElementById(`submenu-${sm}`).style.display = 'none';
+      });
+      document.getElementById('menu-main-view').style.display = 'block';
+      document.getElementById('modal-title').innerText = '⚙️ IMPOSTAZIONI';
+    }
+
+    // STEP 2: SELETTORE SVEGLIA
+    function selectAlarmPickerField(field) {
+      unlockAudioContext();
+      alarmSelectedField = field;
+      document.getElementById('alarm-picker-hours').classList.toggle('selected', field === 'hours');
+      document.getElementById('alarm-picker-minutes').classList.toggle('selected', field === 'minutes');
+    }
+
+    function adjustAlarmTime(delta) {
+      unlockAudioContext();
+      if (alarmSelectedField === 'hours') {
+        alarmHours = (alarmHours + delta + 24) % 24;
+      } else {
+        alarmMinutes = (alarmMinutes + delta + 60) % 60;
+      }
+      updateAlarmPickerDisplay();
+    }
+
+    function updateAlarmPickerDisplay() {
+      document.getElementById('alarm-picker-hours').innerText = String(alarmHours).padStart(2, '0');
+      document.getElementById('alarm-picker-minutes').innerText = String(alarmMinutes).padStart(2, '0');
+    }
+
+    function toggleAlarm() {
+      unlockAudioContext();
+      const hStr = String(alarmHours).padStart(2, '0');
+      const mStr = String(alarmMinutes).padStart(2, '0');
+      alarmTime = `${hStr}:${mStr}`;
+
+      isAlarmActive = true;
+      localStorage.setItem('og_alarm_time', alarmTime);
+      localStorage.setItem('og_alarm_active', true);
+      
+      updateAlarmBtnUI();
+      alert(`Sveglia impostata ed attivata per le ore ${alarmTime}!`);
+    }
+
+    function updateAlarmBtnUI() {
+      const btn = document.getElementById('btn-toggle-alarm');
+      const statusBar = document.getElementById('alarm-status-bar');
+      const statusTime = document.getElementById('alarm-status-time');
+
+      if (isAlarmActive && alarmTime) {
+        btn.classList.add('active');
+        btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> SVEGLIA ATTIVA (${alarmTime})`;
+        statusBar.style.display = 'flex';
+        statusTime.innerText = alarmTime;
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = `<i class="fa-solid fa-bell"></i> SALVA E ATTIVA SVEGLIA`;
+        statusBar.style.display = 'none';
+      }
+    }
+
+    // STEP 3: SUONI ED MP3
     function handleSoundSelectChange() {
       soundChoice = document.getElementById('alarm-sound-select').value;
       localStorage.setItem('og_sound_choice', soundChoice);
-      const mp3Box = document.getElementById('custom-mp3-box');
-      mp3Box.style.display = soundChoice === 'custom' ? 'block' : 'none';
+      document.getElementById('custom-mp3-box').style.display = (soundChoice === 'custom') ? 'block' : 'none';
     }
 
     function handleFileSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = function(e) {
         const blob = new Blob([e.target.result], { type: file.type });
         savedMP3Blob = blob;
-
         if (db) {
           const tx = db.transaction("audioStore", "readwrite");
           tx.objectStore("audioStore").put(blob, "customAlarmMP3");
           tx.objectStore("audioStore").put(file.name, "customAlarmFileName");
         }
-
         document.getElementById('file-status-text').innerText = `🎵 Caricato: ${file.name}`;
       };
       reader.readAsArrayBuffer(file);
@@ -581,43 +864,23 @@
       const tx = db.transaction("audioStore", "readonly");
       const reqBlob = tx.objectStore("audioStore").get("customAlarmMP3");
       const reqName = tx.objectStore("audioStore").get("customAlarmFileName");
-
-      reqBlob.onsuccess = () => {
-        if (reqBlob.result) {
-          savedMP3Blob = reqBlob.result;
-        }
-      };
+      reqBlob.onsuccess = () => { if (reqBlob.result) savedMP3Blob = reqBlob.result; };
       reqName.onsuccess = () => {
-        if (reqName.result) {
-          document.getElementById('file-status-text').innerText = `🎵 In uso: ${reqName.result}`;
-        }
+        if (reqName.result) document.getElementById('file-status-text').innerText = `🎵 In uso: ${reqName.result}`;
       };
     }
 
-    function selectPickerField(field) {
-      unlockAudioContext();
-      selectedField = field;
-      document.getElementById('picker-hours').classList.toggle('selected', field === 'hours');
-      document.getElementById('picker-minutes').classList.toggle('selected', field === 'minutes');
-    }
-
-    function adjustAlarmTime(delta) {
-      unlockAudioContext();
-      if (selectedField === 'hours') {
-        alarmHours = (alarmHours + delta + 24) % 24;
-      } else {
-        alarmMinutes = (alarmMinutes + delta + 60) % 60;
-      }
-      updatePickerDisplay();
-    }
-
-    function updatePickerDisplay() {
-      document.getElementById('picker-hours').innerText = String(alarmHours).padStart(2, '0');
-      document.getElementById('picker-minutes').innerText = String(alarmMinutes).padStart(2, '0');
-    }
-
-    function initAnalogNumbers() {
+    // STEP 4: QUADRANTE ANALOGICO CON TACCHE INTERMEDIE
+    function initAnalogClockTicks() {
       const clock = document.getElementById('analog-clock');
+      for (let i = 0; i < 60; i++) {
+        if (i % 5 !== 0) {
+          const tick = document.createElement('div');
+          tick.className = 'minute-tick';
+          tick.style.transform = `translateX(-50%) rotate(${i * 6}deg)`;
+          clock.appendChild(tick);
+        }
+      }
       for (let i = 1; i <= 12; i++) {
         const num = document.createElement('div');
         num.className = 'clock-number';
@@ -626,42 +889,96 @@
         const radius = 42; 
         const x = 50 + radius * Math.cos(angle);
         const y = 50 + radius * Math.sin(angle);
-        num.style.left = `calc(${x}% - 15px)`;
-        num.style.top = `calc(${y}% - 15px)`;
+        num.style.left = `calc(${x}% - 17px)`;
+        num.style.top = `calc(${y}% - 17px)`;
         clock.appendChild(num);
       }
     }
-    initAnalogNumbers();
+    initAnalogClockTicks();
 
-    if ('getBattery' in navigator) {
-      navigator.getBattery().then(bat => {
-        updateBatteryInfo(bat);
-        bat.addEventListener('levelchange', () => updateBatteryInfo(bat));
-      });
+    // STEP 9: TIMER / CRONOMETRO
+    function startTimer() {
+      if (timerInterval) return;
+      const startTime = Date.now() - timerElapsedMs;
+      timerInterval = setInterval(() => {
+        timerElapsedMs = Date.now() - startTime;
+        updateTimerDisplay();
+      }, 30);
     }
 
-    function updateBatteryInfo(bat) {
-      const level = Math.round(bat.level * 100);
-      document.getElementById('battery-text').innerText = `${level}%`;
-      if (batteryGuardActive && level <= 15 && !bat.charging && wakeLock) {
-        wakeLock.release();
-        wakeLock = null;
-        document.getElementById('lock-icon').style.color = '#777';
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
       }
     }
 
-    function toggleBatteryGuard() {
-      batteryGuardActive = !batteryGuardActive;
-      const btn = document.getElementById('btn-battery-guard');
-      if (batteryGuardActive) {
-        btn.classList.add('active');
-        btn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> PROTEZIONE ATTIVA (15%)`;
-      } else {
-        btn.classList.remove('active');
-        btn.innerHTML = `<i class="fa-solid fa-shield-cat"></i> PROTEZIONE DISATTIVATA`;
+    function resetTimer() {
+      stopTimer();
+      timerElapsedMs = 0;
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const totalSec = Math.floor(timerElapsedMs / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      const cs = Math.floor((timerElapsedMs % 1000) / 10);
+      document.getElementById('timer-display-text').innerText = 
+        `${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s ${String(cs).padStart(2,'0')}cs`;
+    }
+
+    // STEP 10: CONTO ALLA ROVESCIA
+    function selectCDField(field) {
+      cdSelectedField = field;
+      document.getElementById('cd-field-hours').classList.toggle('selected', field === 'hours');
+      document.getElementById('cd-field-minutes').classList.toggle('selected', field === 'minutes');
+      document.getElementById('cd-field-seconds').classList.toggle('selected', field === 'seconds');
+    }
+
+    function adjustCDTime(delta) {
+      if (cdSelectedField === 'hours') cdHours = Math.max(0, cdHours + delta);
+      else if (cdSelectedField === 'minutes') cdMinutes = (cdMinutes + delta + 60) % 60;
+      else if (cdSelectedField === 'seconds') cdSeconds = (cdSeconds + delta + 60) % 60;
+      
+      document.getElementById('cd-field-hours').innerText = String(cdHours).padStart(2,'0');
+      document.getElementById('cd-field-minutes').innerText = String(cdMinutes).padStart(2,'0');
+      document.getElementById('cd-field-seconds').innerText = String(cdSeconds).padStart(2,'0');
+      
+      cdTotalSeconds = (cdHours * 3600) + (cdMinutes * 60) + cdSeconds;
+      updateCDDisplay();
+    }
+
+    function updateCDDisplay() {
+      const h = Math.floor(cdTotalSeconds / 3600);
+      const m = Math.floor((cdTotalSeconds % 3600) / 60);
+      const s = cdTotalSeconds % 60;
+      document.getElementById('cd-display-text').innerText = 
+        `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function startCountdown() {
+      if (cdInterval) clearInterval(cdInterval);
+      cdInterval = setInterval(() => {
+        if (cdTotalSeconds > 0) {
+          cdTotalSeconds--;
+          updateCDDisplay();
+        } else {
+          clearInterval(cdInterval);
+          cdInterval = null;
+          triggerAlarmRinging("00", "00", "⏳ TEMPO SCADUTO!");
+        }
+      }, 1000);
+    }
+
+    function stopCountdown() {
+      if (cdInterval) {
+        clearInterval(cdInterval);
+        cdInterval = null;
       }
     }
 
+    // OROLOGIO E AGGIORNAMENTO TEMPO
     function updateClock() {
       const now = new Date();
       const h = now.getHours();
@@ -670,7 +987,7 @@
       const hStr = String(h).padStart(2, '0');
       const mStr = String(m).padStart(2, '0');
       const sStr = String(s).padStart(2, '0');
-      document.getElementById('time-display').innerText = showSeconds ? `${hStr}:${mStr}:${sStr}` : `${hStr}:${mStr}`;
+      document.getElementById('time-display').innerText = `${hStr}:${mStr}:${sStr}`;
 
       if (s === 0) checkAlarm(hStr, mStr);
 
@@ -689,51 +1006,17 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    function toggleAlarm() {
-      unlockAudioContext();
-      const hStr = String(alarmHours).padStart(2, '0');
-      const mStr = String(alarmMinutes).padStart(2, '0');
-      alarmTime = `${hStr}:${mStr}`;
-
-      isAlarmActive = !isAlarmActive;
-      localStorage.setItem('og_alarm_time', alarmTime);
-      localStorage.setItem('og_alarm_active', isAlarmActive);
-      
-      updateAlarmBtnUI();
-      if (isAlarmActive) {
-        alert(`Sveglia impostata alle ore ${alarmTime} con audio sbloccato!`);
-      }
-    }
-
-    function updateAlarmBtnUI() {
-      const btn = document.getElementById('btn-toggle-alarm');
-      const statusBar = document.getElementById('alarm-status-bar');
-      const statusTime = document.getElementById('alarm-status-time');
-
-      if (isAlarmActive && alarmTime) {
-        btn.classList.add('active');
-        btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> DISATTIVA SVEGLIA (${alarmTime})`;
-        statusBar.style.display = 'flex';
-        statusTime.innerText = alarmTime;
-      } else {
-        btn.classList.remove('active');
-        btn.innerHTML = `<i class="fa-solid fa-bell"></i> ATTIVA SVEGLIA`;
-        statusBar.style.display = 'none';
-      }
-    }
-
-    initPickerUI();
-
     function checkAlarm(hStr, mStr) {
       if (isAlarmActive && alarmTime === `${hStr}:${mStr}` && !isRinging) {
-        triggerAlarmRinging(hStr, mStr);
+        triggerAlarmRinging(hStr, mStr, "⏰ SVEGLIA!");
       }
     }
 
-    function triggerAlarmRinging(hStr, mStr) {
+    function triggerAlarmRinging(hStr, mStr, customTitle) {
       isRinging = true;
       unlockAudioContext();
       document.getElementById('alarm-ring-modal').style.display = 'flex';
+      document.getElementById('alarm-ring-title').innerText = customTitle || "⏰ SVEGLIA!";
       document.getElementById('alarm-ring-sub').innerText = `Sono le ore ${hStr}:${mStr}`;
       currentVolume = 0.05;
 
@@ -782,32 +1065,22 @@
       unlockAudioContext();
       const notes = [261.63, 329.63, 392.00, 523.25];
       let noteIndex = 0;
-
       function playNote() {
         if (!isRinging || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-
         osc.type = 'sine';
         osc.frequency.setValueAtTime(notes[noteIndex], audioCtx.currentTime);
-
         gain.gain.setValueAtTime(currentVolume, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
-
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-
         osc.start();
         osc.stop(audioCtx.currentTime + 1.2);
-
         activeOscillators.push(osc);
         noteIndex = (noteIndex + 1) % notes.length;
-
-        if (currentVolume < 0.8) {
-          currentVolume += 0.02;
-        }
+        if (currentVolume < 0.8) currentVolume += 0.02;
       }
-
       playNote();
       fadeInterval = setInterval(playNote, 1400);
     }
@@ -825,7 +1098,6 @@
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.3);
-
         if (currentVolume < 1.0) currentVolume += 0.05;
       }
       beep();
@@ -862,15 +1134,19 @@
       currentColor = color;
       localStorage.setItem('og_color', color);
       document.getElementById('time-display').style.color = color;
-      document.getElementById('time-display').style.textShadow = `0 0 30px ${color}80`;
+      document.getElementById('time-display').style.textShadow = `0 0 35px ${color}80`;
       document.getElementById('analog-clock').style.borderColor = color;
       document.querySelectorAll('.clock-number').forEach(el => el.style.color = color);
     }
 
     setClockMode(clockMode);
     changeColor(currentColor);
+    updateAlarmBtnUI();
 
-    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+    function openSettings() { 
+      showMainMenu();
+      document.getElementById('settings-modal').style.display = 'flex'; 
+    }
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
 
     function toggleFullscreen() {
@@ -894,12 +1170,30 @@
       } catch (e) {}
     }
 
+    function updateBatteryInfo(bat) {
+      const level = Math.round(bat.level * 100);
+      document.getElementById('battery-text').innerText = `${level}%`;
+    }
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then(bat => {
+        updateBatteryInfo(bat);
+        bat.addEventListener('levelchange', () => updateBatteryInfo(bat));
+      });
+    }
+
+    function toggleBatteryGuard() {
+      batteryGuardActive = !batteryGuardActive;
+      const btn = document.getElementById('btn-battery-guard');
+      btn.classList.toggle('active', batteryGuardActive);
+    }
+
     let screensaverActive = false;
     function toggleScreensaver() {
       screensaverActive = !screensaverActive;
       document.querySelector('.clock-container').style.opacity = screensaverActive ? '0.2' : '1.0';
     }
 
+    // GEOLOCALIZZAZIONE METEO & PRESSIONE (STEP 6 & 7)
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
@@ -910,7 +1204,7 @@
           if (data && data.current_weather) {
             document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C`;
             if (data.hourly) {
-              document.getElementById('humidity-text').innerText = `${data.hourly.relativehumidity_2m[0]}%`;
+              document.getElementById('hum-ext').innerText = `${data.hourly.relativehumidity_2m[0]}%`;
               document.getElementById('pressure-text').innerText = `${Math.round(data.hourly.surface_pressure[0])} hPa`;
             }
           }
