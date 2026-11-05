@@ -760,13 +760,23 @@
     document.body.addEventListener('click', unlockAudioContext, { once: false });
     document.body.addEventListener('touchstart', unlockAudioContext, { once: false });
 
-    function openSubMenu(menuKey) {
+   function openSubMenu(menuKey) {
       unlockAudioContext();
       document.getElementById('menu-main-view').style.display = 'none';
       const subMenus = ['alarm', 'sounds', 'quadrant', 'timer', 'countdown', 'display'];
       subMenus.forEach(sm => {
         document.getElementById(`submenu-${sm}`).style.display = (sm === menuKey) ? 'block' : 'none';
       });
+
+      // SE SI APRE IL MENU SUONI, REIMPOSTA IL MENU A TENDINA SULL'ULTIMA SCELTA SALVATA
+      if (menuKey === 'sounds') {
+        const selectEl = document.getElementById('alarm-sound-select');
+        if (selectEl) {
+          selectEl.value = soundChoice;
+        }
+        document.getElementById('custom-mp3-box').style.display = (soundChoice === 'custom') ? 'block' : 'none';
+      }
+
       const titles = {
         alarm: '🔔 SVEGLIA',
         sounds: '🎵 SUONI ED MP3',
@@ -776,7 +786,7 @@
         display: '🎨 COLORE E BATTERIA'
       };
       document.getElementById('modal-title').innerText = titles[menuKey] || 'IMPOSTAZIONI';
-    }
+    } 
 
     function showMainMenu() {
       unlockAudioContext();
