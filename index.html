@@ -305,7 +305,6 @@
       gap: 8px;
     }
 
-    /* SELEZIONE TEMPI CON ETICHETTE ORE / MIN / SEC */
     .time-picker-container {
       display: flex;
       align-items: center;
@@ -330,21 +329,26 @@
       margin-bottom: 4px;
       letter-spacing: 0.5px;
     }
+    
+    /* STILE SELEZIONE BIANCO / BLU */
     .time-box {
-      font-size: 30px;
+      font-size: 32px;
       font-weight: bold;
-      color: #fff;
-      padding: 8px 14px;
-      background: #252525;
+      color: #00bcd4;
+      padding: 8px 16px;
+      background: #1a1a1a;
       border-radius: 10px;
       cursor: pointer;
-      border: 2px solid transparent;
+      border: 2px solid #333;
+      transition: all 0.2s ease;
     }
     .time-box.selected {
-      border-color: #00bcd4;
-      color: #00bcd4;
-      background: #0a252a;
+      border-color: #ffffff;
+      color: #000000;
+      background: #ffffff;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
     }
+    
     .time-separator {
       font-size: 30px;
       font-weight: bold;
@@ -361,10 +365,10 @@
       background: #333;
       color: #00bcd4;
       border: 1px solid #555;
-      width: 46px;
-      height: 38px;
+      width: 48px;
+      height: 42px;
       border-radius: 8px;
-      font-size: 18px;
+      font-size: 20px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -562,7 +566,7 @@
       <div id="submenu-alarm" style="display:none;">
         <div class="setting-group">
           <div class="setting-title">Imposta Orario Sveglia</div>
-          <div class="setting-desc">Tocca Ore o Minuti e usa le freccette ▲ / ▼.</div>
+          <div class="setting-desc">Tocca Ore (Bianco) o Minuti (Blu) e usa le freccette ▲ / ▼.</div>
           
           <div class="time-picker-container">
             <div class="time-column">
@@ -575,8 +579,8 @@
               <div id="alarm-picker-minutes" class="time-box" onclick="selectAlarmPickerField('minutes')">00</div>
             </div>
             <div class="arrow-btns">
-              <button class="btn-arrow" onclick="adjustAlarmTime(1)"><i class="fa-solid fa-chevron-up"></i></button>
-              <button class="btn-arrow" onclick="adjustAlarmTime(-1)"><i class="fa-solid fa-chevron-down"></i></button>
+              <button class="btn-arrow" id="btn-alarm-up"><i class="fa-solid fa-chevron-up"></i></button>
+              <button class="btn-arrow" id="btn-alarm-down"><i class="fa-solid fa-chevron-down"></i></button>
             </div>
           </div>
 
@@ -638,7 +642,6 @@
         <button class="btn-back" onclick="showMainMenu()"><i class="fa-solid fa-arrow-left"></i> Indietro al Menu Principale</button>
       </div>
 
-      <!-- SOTTOMENU CONTO ALLA ROVESCIA CON ETICHETTE ORE - MIN - SEC -->
       <div id="submenu-countdown" style="display:none;">
         <div class="setting-group">
           <div class="setting-title">⏳ Conto alla Rovescia</div>
@@ -756,8 +759,10 @@
       }
     }
     document.body.addEventListener('click', unlockAudioContext, { once: false });
+    document.body.addEventListener('touchstart', unlockAudioContext, { once: false });
 
     function openSubMenu(menuKey) {
+      unlockAudioContext();
       document.getElementById('menu-main-view').style.display = 'none';
       const subMenus = ['alarm', 'sounds', 'quadrant', 'timer', 'countdown', 'display'];
       subMenus.forEach(sm => {
@@ -775,6 +780,7 @@
     }
 
     function showMainMenu() {
+      unlockAudioContext();
       const subMenus = ['alarm', 'sounds', 'quadrant', 'timer', 'countdown', 'display'];
       subMenus.forEach(sm => {
         document.getElementById(`submenu-${sm}`).style.display = 'none';
@@ -804,6 +810,40 @@
       document.getElementById('alarm-picker-hours').innerText = String(alarmHours).padStart(2, '0');
       document.getElementById('alarm-picker-minutes').innerText = String(alarmMinutes).padStart(2, '0');
     }
+
+    let holdTimer = null;
+    let holdInterval = null;
+
+    function attachHoldEvents(btnId, delta) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+
+      const startHold = (e) => {
+        e.preventDefault();
+        adjustAlarmTime(delta);
+        holdTimer = setTimeout(() => {
+          holdInterval = setInterval(() => {
+            adjustAlarmTime(delta);
+          }, 80);
+        }, 400);
+      };
+
+      const stopHold = () => {
+        if (holdTimer) clearTimeout(holdTimer);
+        if (holdInterval) clearInterval(holdInterval);
+      };
+
+      btn.addEventListener('mousedown', startHold);
+      btn.addEventListener('mouseup', stopHold);
+      btn.addEventListener('mouseleave', stopHold);
+
+      btn.addEventListener('touchstart', startHold, { passive: false });
+      btn.addEventListener('touchend', stopHold);
+      btn.addEventListener('touchcancel', stopHold);
+    }
+
+    attachHoldEvents('btn-alarm-up', 1);
+    attachHoldEvents('btn-alarm-down', -1);
 
     function toggleAlarm() {
       unlockAudioContext();
@@ -1011,10 +1051,11 @@
     function triggerAlarmRinging(hStr, mStr, customTitle) {
       isRinging = true;
       unlockAudioContext();
+      
       document.getElementById('alarm-ring-modal').style.display = 'flex';
       document.getElementById('alarm-ring-title').innerText = customTitle || "⏰ SVEGLIA!";
       document.getElementById('alarm-ring-sub').innerText = `Sono le ore ${hStr}:${mStr}`;
-      currentVolume = 0.05;
+      currentVolume = 0.3;
 
       if (soundChoice === 'custom' && savedMP3Blob) {
         playCustomMP3Alarm();
@@ -1032,14 +1073,19 @@
       customAudioElement = new Audio(audioUrl);
       customAudioElement.loop = true;
       customAudioElement.volume = currentVolume;
-      customAudioElement.play();
+      if (customAudioElement.setSinkId) {
+        customAudioElement.setSinkId('default').catch(() => {});
+      }
+      customAudioElement.play().catch(e => {
+        playBeepAlarm();
+      });
 
       fadeInterval = setInterval(() => {
         if (customAudioElement && currentVolume < 1.0) {
-          currentVolume = Math.min(1.0, currentVolume + 0.05);
+          currentVolume = Math.min(1.0, currentVolume + 0.1);
           customAudioElement.volume = currentVolume;
         }
-      }, 1500);
+      }, 1000);
     }
 
     function playSpeechAlarm(hStr, mStr) {
@@ -1051,10 +1097,10 @@
         speechSynthUtterance.lang = 'it-IT';
         speechSynthUtterance.volume = currentVolume;
         window.speechSynthesis.speak(speechSynthUtterance);
-        if (currentVolume < 1.0) currentVolume += 0.15;
+        if (currentVolume < 1.0) currentVolume += 0.2;
       }
       announce();
-      fadeInterval = setInterval(announce, 4000);
+      fadeInterval = setInterval(announce, 3500);
     }
 
     function playSoftMelodyAlarm() {
@@ -1075,10 +1121,10 @@
         osc.stop(audioCtx.currentTime + 1.2);
         activeOscillators.push(osc);
         noteIndex = (noteIndex + 1) % notes.length;
-        if (currentVolume < 0.8) currentVolume += 0.02;
+        if (currentVolume < 0.9) currentVolume += 0.05;
       }
       playNote();
-      fadeInterval = setInterval(playNote, 1400);
+      fadeInterval = setInterval(playNote, 1200);
     }
 
     function playBeepAlarm() {
@@ -1087,17 +1133,17 @@
         if (!isRinging || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
         gain.gain.value = currentVolume;
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.3);
-        if (currentVolume < 1.0) currentVolume += 0.05;
+        osc.stop(audioCtx.currentTime + 0.4);
+        if (currentVolume < 1.0) currentVolume += 0.1;
       }
       beep();
-      fadeInterval = setInterval(beep, 1000);
+      fadeInterval = setInterval(beep, 800);
     }
 
     function stopAlarmRinging() {
@@ -1208,4 +1254,3 @@
     }
   </script>
 </body>
-</html>
