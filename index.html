@@ -865,6 +865,9 @@
       localStorage.setItem('og_alarm_active', true);
       
       updateAlarmBtnUI();
+      // Inizializza il valore del menu a tendina all'avvio con la preferenza in memoria
+const selectEl = document.getElementById('alarm-sound-select');
+if (selectEl) selectEl.value = soundChoice;
       alert(`Sveglia impostata ed attivata per le ore ${alarmTime}!`);
     }
 
