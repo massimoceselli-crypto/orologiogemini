@@ -700,7 +700,6 @@
 
     </div>
   </div>
-
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -880,6 +879,17 @@
       soundChoice = document.getElementById('alarm-sound-select').value;
       localStorage.setItem('og_sound_choice', soundChoice);
       document.getElementById('custom-mp3-box').style.display = (soundChoice === 'custom') ? 'block' : 'none';
+
+      // Riproduce un'anteprima di prova al cambio di selezione
+      if (soundChoice === 'speech') {
+        playSpeechAlarm("08", "00", true);
+      } else if (soundChoice === 'melody') {
+        playSoftMelodyAlarm(true);
+      } else if (soundChoice === 'beep') {
+        playBeepAlarm(true);
+      } else if (soundChoice === 'custom' && savedMP3Blob) {
+        playCustomMP3Alarm(true);
+      }
     }
 
     function handleFileSelect(event) {
@@ -1058,57 +1068,79 @@
       currentVolume = 0.3;
 
       if (soundChoice === 'custom' && savedMP3Blob) {
-        playCustomMP3Alarm();
+        playCustomMP3Alarm(false);
       } else if (soundChoice === 'speech') {
-        playSpeechAlarm(hStr, mStr);
+        playSpeechAlarm(hStr, mStr, false);
       } else if (soundChoice === 'melody') {
-        playSoftMelodyAlarm();
+        playSoftMelodyAlarm(false);
       } else {
-        playBeepAlarm();
+        playBeepAlarm(false);
       }
     }
 
-    function playCustomMP3Alarm() {
+    function playCustomMP3Alarm(isPreview) {
+      if (!savedMP3Blob) return;
       const audioUrl = URL.createObjectURL(savedMP3Blob);
+      if (customAudioElement) customAudioElement.pause();
       customAudioElement = new Audio(audioUrl);
-      customAudioElement.loop = true;
+      customAudioElement.loop = !isPreview;
       customAudioElement.volume = currentVolume;
-      if (customAudioElement.setSinkId) {
-        customAudioElement.setSinkId('default').catch(() => {});
-      }
-      customAudioElement.play().catch(e => {
-        playBeepAlarm();
-      });
+      customAudioElement.play().catch(e => playBeepAlarm(isPreview));
 
-      fadeInterval = setInterval(() => {
-        if (customAudioElement && currentVolume < 1.0) {
-          currentVolume = Math.min(1.0, currentVolume + 0.1);
-          customAudioElement.volume = currentVolume;
-        }
-      }, 1000);
+      if (isPreview) {
+        setTimeout(() => { if (customAudioElement) customAudioElement.pause(); }, 4000);
+      } else {
+        fadeInterval = setInterval(() => {
+          if (customAudioElement && currentVolume < 1.0) {
+            currentVolume = Math.min(1.0, currentVolume + 0.1);
+            customAudioElement.volume = currentVolume;
+          }
+        }, 1000);
+      }
     }
 
-    function playSpeechAlarm(hStr, mStr) {
-      if (!('speechSynthesis' in window)) return;
+    function playSpeechAlarm(hStr, mStr, isPreview) {
+      if (!('speechSynthesis' in window)) {
+        alert("La sintesi vocale non è supportata da questo browser.");
+        return;
+      }
       window.speechSynthesis.cancel();
-      function announce() {
-        if (!isRinging) return;
-        speechSynthUtterance = new SpeechSynthesisUtterance(`Sono le ore ${hStr} e ${mStr}`);
+
+      function gestisciPronuncia() {
+        if (!isRinging && !isPreview) return;
+        const testo = isPreview ? "Sintesi vocale in italiano attiva." : `Sono le ore ${hStr} e ${mStr}. È ora di svegliarsi!`;
+        speechSynthUtterance = new SpeechSynthesisUtterance(testo);
         speechSynthUtterance.lang = 'it-IT';
+        speechSynthUtterance.rate = 0.95;
         speechSynthUtterance.volume = currentVolume;
+
+        const voci = window.speechSynthesis.getVoices();
+        const voceItaliana = voci.find(v => v.lang.startsWith('it') || v.lang.includes('it_IT'));
+        if (voceItaliana) {
+          speechSynthUtterance.voice = voceItaliana;
+        }
+
         window.speechSynthesis.speak(speechSynthUtterance);
-        if (currentVolume < 1.0) currentVolume += 0.2;
+        if (!isPreview && currentVolume < 1.0) currentVolume += 0.15;
       }
-      announce();
-      fadeInterval = setInterval(announce, 3500);
+
+      if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.onvoiceschanged = gestisciPronuncia;
+      } else {
+        gestisciPronuncia();
+      }
+
+      if (!isPreview) {
+        fadeInterval = setInterval(gestisciPronuncia, 6000);
+      }
     }
 
-    function playSoftMelodyAlarm() {
+    function playSoftMelodyAlarm(isPreview) {
       unlockAudioContext();
       const notes = [261.63, 329.63, 392.00, 523.25];
       let noteIndex = 0;
       function playNote() {
-        if (!isRinging || !audioCtx) return;
+        if ((!isRinging && !isPreview) || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
@@ -1121,16 +1153,18 @@
         osc.stop(audioCtx.currentTime + 1.2);
         activeOscillators.push(osc);
         noteIndex = (noteIndex + 1) % notes.length;
-        if (currentVolume < 0.9) currentVolume += 0.05;
+        if (!isPreview && currentVolume < 0.9) currentVolume += 0.05;
       }
       playNote();
-      fadeInterval = setInterval(playNote, 1200);
+      if (!isPreview) {
+        fadeInterval = setInterval(playNote, 1200);
+      }
     }
 
-    function playBeepAlarm() {
+    function playBeepAlarm(isPreview) {
       unlockAudioContext();
       function beep() {
-        if (!isRinging || !audioCtx) return;
+        if ((!isRinging && !isPreview) || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'triangle';
@@ -1140,10 +1174,12 @@
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.4);
-        if (currentVolume < 1.0) currentVolume += 0.1;
+        if (!isPreview && currentVolume < 1.0) currentVolume += 0.1;
       }
       beep();
-      fadeInterval = setInterval(beep, 800);
+      if (!isPreview) {
+        fadeInterval = setInterval(beep, 800);
+      }
     }
 
     function stopAlarmRinging() {
@@ -1254,3 +1290,4 @@
     }
   </script>
 </body>
+</html>
