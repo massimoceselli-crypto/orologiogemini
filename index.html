@@ -35,6 +35,16 @@
       align-items: center;
     }
 
+    /* FORZATURA SCHERMO INTERO CSS FALLBACK */
+    body.pseudo-fullscreen {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 99999 !important;
+    }
+
     .corner-btn {
       position: absolute;
       background: rgba(255, 255, 255, 0.12);
@@ -330,7 +340,6 @@
       letter-spacing: 0.5px;
     }
     
-    /* STILE SELEZIONE BIANCO / BLU */
     .time-box {
       font-size: 32px;
       font-weight: bold;
@@ -488,7 +497,10 @@
   </style>
 </head>
 <body>
-  <button class="corner-btn top-left" onclick="toggleFullscreen()" title="Schermo Intero"><i class="fa-solid fa-expand"></i></button>
+  <!-- BOTTONE SCHERMO INTERO CON ICONA DINAMICA -->
+  <button class="corner-btn top-left" onclick="toggleFullscreen()" title="Schermo Intero">
+    <i id="fs-icon" class="fa-solid fa-expand"></i>
+  </button>
   <button class="corner-btn top-right" onclick="openSettings()" title="Menu Impostazioni"><i class="fa-solid fa-gear"></i></button>
   <button class="corner-btn bottom-left" onclick="toggleClockStyle()" title="Cambia Vista"><i class="fa-solid fa-rotate"></i></button>
   <button class="corner-btn bottom-right" onclick="toggleWakeLock()" title="Schermo Sempre Acceso"><i id="lock-icon" class="fa-solid fa-lightbulb" style="color:#ffeb3b;"></i></button>
@@ -700,6 +712,7 @@
 
     </div>
   </div>
+
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -760,23 +773,13 @@
     document.body.addEventListener('click', unlockAudioContext, { once: false });
     document.body.addEventListener('touchstart', unlockAudioContext, { once: false });
 
-   function openSubMenu(menuKey) {
+    function openSubMenu(menuKey) {
       unlockAudioContext();
       document.getElementById('menu-main-view').style.display = 'none';
       const subMenus = ['alarm', 'sounds', 'quadrant', 'timer', 'countdown', 'display'];
       subMenus.forEach(sm => {
         document.getElementById(`submenu-${sm}`).style.display = (sm === menuKey) ? 'block' : 'none';
       });
-
-      // SE SI APRE IL MENU SUONI, REIMPOSTA IL MENU A TENDINA SULL'ULTIMA SCELTA SALVATA
-      if (menuKey === 'sounds') {
-        const selectEl = document.getElementById('alarm-sound-select');
-        if (selectEl) {
-          selectEl.value = soundChoice;
-        }
-        document.getElementById('custom-mp3-box').style.display = (soundChoice === 'custom') ? 'block' : 'none';
-      }
-
       const titles = {
         alarm: '🔔 SVEGLIA',
         sounds: '🎵 SUONI ED MP3',
@@ -786,7 +789,7 @@
         display: '🎨 COLORE E BATTERIA'
       };
       document.getElementById('modal-title').innerText = titles[menuKey] || 'IMPOSTAZIONI';
-    } 
+    }
 
     function showMainMenu() {
       unlockAudioContext();
@@ -865,9 +868,6 @@
       localStorage.setItem('og_alarm_active', true);
       
       updateAlarmBtnUI();
-      // Inizializza il valore del menu a tendina all'avvio con la preferenza in memoria
-const selectEl = document.getElementById('alarm-sound-select');
-if (selectEl) selectEl.value = soundChoice;
       alert(`Sveglia impostata ed attivata per le ore ${alarmTime}!`);
     }
 
@@ -892,17 +892,6 @@ if (selectEl) selectEl.value = soundChoice;
       soundChoice = document.getElementById('alarm-sound-select').value;
       localStorage.setItem('og_sound_choice', soundChoice);
       document.getElementById('custom-mp3-box').style.display = (soundChoice === 'custom') ? 'block' : 'none';
-
-      // Riproduce un'anteprima di prova al cambio di selezione
-      if (soundChoice === 'speech') {
-        playSpeechAlarm("08", "00", true);
-      } else if (soundChoice === 'melody') {
-        playSoftMelodyAlarm(true);
-      } else if (soundChoice === 'beep') {
-        playBeepAlarm(true);
-      } else if (soundChoice === 'custom' && savedMP3Blob) {
-        playCustomMP3Alarm(true);
-      }
     }
 
     function handleFileSelect(event) {
@@ -1081,79 +1070,57 @@ if (selectEl) selectEl.value = soundChoice;
       currentVolume = 0.3;
 
       if (soundChoice === 'custom' && savedMP3Blob) {
-        playCustomMP3Alarm(false);
+        playCustomMP3Alarm();
       } else if (soundChoice === 'speech') {
-        playSpeechAlarm(hStr, mStr, false);
+        playSpeechAlarm(hStr, mStr);
       } else if (soundChoice === 'melody') {
-        playSoftMelodyAlarm(false);
+        playSoftMelodyAlarm();
       } else {
-        playBeepAlarm(false);
+        playBeepAlarm();
       }
     }
 
-    function playCustomMP3Alarm(isPreview) {
-      if (!savedMP3Blob) return;
+    function playCustomMP3Alarm() {
       const audioUrl = URL.createObjectURL(savedMP3Blob);
-      if (customAudioElement) customAudioElement.pause();
       customAudioElement = new Audio(audioUrl);
-      customAudioElement.loop = !isPreview;
+      customAudioElement.loop = true;
       customAudioElement.volume = currentVolume;
-      customAudioElement.play().catch(e => playBeepAlarm(isPreview));
-
-      if (isPreview) {
-        setTimeout(() => { if (customAudioElement) customAudioElement.pause(); }, 4000);
-      } else {
-        fadeInterval = setInterval(() => {
-          if (customAudioElement && currentVolume < 1.0) {
-            currentVolume = Math.min(1.0, currentVolume + 0.1);
-            customAudioElement.volume = currentVolume;
-          }
-        }, 1000);
+      if (customAudioElement.setSinkId) {
+        customAudioElement.setSinkId('default').catch(() => {});
       }
-    }
+      customAudioElement.play().catch(e => {
+        playBeepAlarm();
+      });
 
-    function playSpeechAlarm(hStr, mStr, isPreview) {
-      if (!('speechSynthesis' in window)) {
-        alert("La sintesi vocale non è supportata da questo browser.");
-        return;
-      }
-      window.speechSynthesis.cancel();
-
-      function gestisciPronuncia() {
-        if (!isRinging && !isPreview) return;
-        const testo = isPreview ? "Sintesi vocale in italiano attiva." : `Sono le ore ${hStr} e ${mStr}. È ora di svegliarsi!`;
-        speechSynthUtterance = new SpeechSynthesisUtterance(testo);
-        speechSynthUtterance.lang = 'it-IT';
-        speechSynthUtterance.rate = 0.95;
-        speechSynthUtterance.volume = currentVolume;
-
-        const voci = window.speechSynthesis.getVoices();
-        const voceItaliana = voci.find(v => v.lang.startsWith('it') || v.lang.includes('it_IT'));
-        if (voceItaliana) {
-          speechSynthUtterance.voice = voceItaliana;
+      fadeInterval = setInterval(() => {
+        if (customAudioElement && currentVolume < 1.0) {
+          currentVolume = Math.min(1.0, currentVolume + 0.1);
+          customAudioElement.volume = currentVolume;
         }
-
-        window.speechSynthesis.speak(speechSynthUtterance);
-        if (!isPreview && currentVolume < 1.0) currentVolume += 0.15;
-      }
-
-      if (window.speechSynthesis.getVoices().length === 0) {
-        window.speechSynthesis.onvoiceschanged = gestisciPronuncia;
-      } else {
-        gestisciPronuncia();
-      }
-
-      if (!isPreview) {
-        fadeInterval = setInterval(gestisciPronuncia, 6000);
-      }
+      }, 1000);
     }
 
-    function playSoftMelodyAlarm(isPreview) {
+    function playSpeechAlarm(hStr, mStr) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      function announce() {
+        if (!isRinging) return;
+        speechSynthUtterance = new SpeechSynthesisUtterance(`Sono le ore ${hStr} e ${mStr}`);
+        speechSynthUtterance.lang = 'it-IT';
+        speechSynthUtterance.volume = currentVolume;
+        window.speechSynthesis.speak(speechSynthUtterance);
+        if (currentVolume < 1.0) currentVolume += 0.2;
+      }
+      announce();
+      fadeInterval = setInterval(announce, 3500);
+    }
+
+    function playSoftMelodyAlarm() {
       unlockAudioContext();
       const notes = [261.63, 329.63, 392.00, 523.25];
       let noteIndex = 0;
       function playNote() {
-        if ((!isRinging && !isPreview) || !audioCtx) return;
+        if (!isRinging || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
@@ -1166,18 +1133,16 @@ if (selectEl) selectEl.value = soundChoice;
         osc.stop(audioCtx.currentTime + 1.2);
         activeOscillators.push(osc);
         noteIndex = (noteIndex + 1) % notes.length;
-        if (!isPreview && currentVolume < 0.9) currentVolume += 0.05;
+        if (currentVolume < 0.9) currentVolume += 0.05;
       }
       playNote();
-      if (!isPreview) {
-        fadeInterval = setInterval(playNote, 1200);
-      }
+      fadeInterval = setInterval(playNote, 1200);
     }
 
-    function playBeepAlarm(isPreview) {
+    function playBeepAlarm() {
       unlockAudioContext();
       function beep() {
-        if ((!isRinging && !isPreview) || !audioCtx) return;
+        if (!isRinging || !audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'triangle';
@@ -1187,12 +1152,10 @@ if (selectEl) selectEl.value = soundChoice;
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.4);
-        if (!isPreview && currentVolume < 1.0) currentVolume += 0.1;
+        if (currentVolume < 1.0) currentVolume += 0.1;
       }
       beep();
-      if (!isPreview) {
-        fadeInterval = setInterval(beep, 800);
-      }
+      fadeInterval = setInterval(beep, 800);
     }
 
     function stopAlarmRinging() {
@@ -1240,11 +1203,32 @@ if (selectEl) selectEl.value = soundChoice;
     }
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
 
+    // NUOVA FUNZIONE SCHERMO INTERO CON FALLBACK ED ICONA DINAMICA
     function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
+      const fsIcon = document.getElementById('fs-icon');
+      const body = document.body;
+
+      if (!document.fullscreenElement && !body.classList.contains('pseudo-fullscreen')) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().then(() => {
+            fsIcon.className = 'fa-solid fa-compress';
+          }).catch(() => {
+            // Fallback CSS per browser mobile rigidi
+            body.classList.add('pseudo-fullscreen');
+            fsIcon.className = 'fa-solid fa-compress';
+          });
+        } else {
+          body.classList.add('pseudo-fullscreen');
+          fsIcon.className = 'fa-solid fa-compress';
+        }
       } else {
-        document.exitFullscreen().catch(() => {});
+        if (document.exitFullscreen && document.fullscreenElement) {
+          document.exitFullscreen().then(() => {
+            fsIcon.className = 'fa-solid fa-expand';
+          }).catch(() => {});
+        }
+        body.classList.remove('pseudo-fullscreen');
+        fsIcon.className = 'fa-solid fa-expand';
       }
     }
 
