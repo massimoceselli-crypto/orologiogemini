@@ -733,6 +733,7 @@
     let audioCtx = null;
     let activeOscillators = [];
     let customAudioElement = null;
+    let silentAudioLoop = null;
 
     let db = null;
     const dbRequest = indexedDB.open("OrologioGeminiDB", 1);
@@ -780,6 +781,32 @@
     }
     document.body.addEventListener('click', unlockAudioContext, { once: false });
     document.body.addEventListener('touchstart', unlockAudioContext, { once: false });
+
+    // FUNZIONE AUDIO SILENZIOSO PER MANTENERE HYPEROS E ANDROID SEMPRE SVEGLI
+    function startSilentAudioBackground() {
+      if (!silentAudioLoop) {
+        // Genera una traccia audio inaudita di 1 secondo in loop costante
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const stream = canvas.captureStream();
+        unlockAudioContext();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        gain.gain.value = 0.0001; // Inudibile
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        silentAudioLoop = osc;
+      }
+    }
+
+    function stopSilentAudioBackground() {
+      if (silentAudioLoop) {
+        try { silentAudioLoop.stop(); } catch(e){}
+        silentAudioLoop = null;
+      }
+    }
 
     function openSubMenu(menuKey) {
       unlockAudioContext();
@@ -876,6 +903,9 @@
       isAlarmActive = true;
       localStorage.setItem('og_alarm_time', alarmTime);
       localStorage.setItem('og_alarm_active', true);
+
+      // Mantiene attiva la riproduzione multimediale per impedire a Xiaomi di spegnere il timer
+      startSilentAudioBackground();
       
       if (navigator.serviceWorker && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
@@ -885,7 +915,7 @@
       }
 
       updateAlarmBtnUI();
-      alert(`Sveglia impostata ed attivata per le ore ${alarmTime}! (Controllo background attivo)`);
+      alert(`Sveglia attivata per le ore ${alarmTime}! Protezione background attiva.`);
     }
 
     function updateAlarmBtnUI() {
@@ -1080,6 +1110,7 @@
     function triggerAlarmRinging(hStr, mStr, customTitle) {
       isRinging = true;
       unlockAudioContext();
+      stopSilentAudioBackground();
       
       document.getElementById('alarm-ring-modal').style.display = 'flex';
       document.getElementById('alarm-ring-title').innerText = customTitle || "⏰ SVEGLIA!";
