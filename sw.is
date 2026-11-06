@@ -1,76 +1,60 @@
-const CACHE_NAME = 'orologio-gemini-v1';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
-];
+let alarmTime = null;
+let alarmCheckInterval = null;
 
-// Installazione e caching delle risorse
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
-  );
+self.addEventListener('install', (e) => {
+  self.skipWaiting();
 });
 
-// Attivazione e pulizia vecchie cache
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
+self.addEventListener('activate', (e) => {
+  e.waitUntil(self.clients.claim());
 });
 
-// Intercettazione delle richieste di rete (Offline PWA)
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+// Gestione messaggi inviati dalla pagina web (index.html)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SET_ALARM') {
+    alarmTime = event.data.time;
+    startBackgroundTimer();
+  } else if (event.data && event.data.type === 'CLEAR_ALARM') {
+    alarmTime = null;
+    if (alarmCheckInterval) clearInterval(alarmCheckInterval);
+  }
 });
 
-// Gestione Notifiche di Background per la Sveglia
-self.addEventListener('show-alarm-notification', (event) => {
-  const data = event.data ? event.data.json() : {};
-  const title = data.title || "⏰ SVEGLIA! - OROLOGIO GEMINI";
-  const options = {
-    body: data.body || "È ora di alzarsi!",
-    icon: "https://cdn-icons-png.flaticon.com/512/3103/3103030.png",
-    badge: "https://cdn-icons-png.flaticon.com/512/3103/3103030.png",
-    vibrate: [500, 250, 500, 250, 500, 250, 500],
-    tag: "alarm-notification",
-    renotify: true,
-    requireInteraction: true // Mantiene la notifica attiva finché non la premi
-  };
+function startBackgroundTimer() {
+  if (alarmCheckInterval) clearInterval(alarmCheckInterval);
+  
+  alarmCheckInterval = setInterval(() => {
+    if (!alarmTime) return;
+    
+    const now = new Date();
+    const currentH = String(now.getHours()).padStart(2, '0');
+    const currentM = String(now.getMinutes()).padStart(2, '0');
+    const currentTimeStr = `${currentH}:${currentM}`;
 
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
-});
+    if (currentTimeStr === alarmTime && now.getSeconds() === 0) {
+      // Scatena la notifica ad alta priorità per forzare il risveglio dello schermo
+      self.registration.showNotification("⏰ SVEGLIA OROLOGIO GEMINI!", {
+        body: `Sono le ore ${alarmTime}! Tocca per aprire e spegnere.`,
+        icon: "https://cdn-icons-png.flaticon.com/512/3103/3103030.png",
+        badge: "https://cdn-icons-png.flaticon.com/512/3103/3103030.png",
+        vibrate: [500, 200, 500, 200, 500, 200, 1000],
+        tag: "gemini-alarm",
+        renotify: true,
+        requireInteraction: true
+      });
+    }
+  }, 1000);
+}
 
-// Quando l'utente clicca sulla notifica, riapre l'app
+// Cliccando sulla notifica si riapre l'orologio a tutto schermo
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (let client of clientList) {
-        if (client.url && 'focus' in client) {
-          return client.focus();
-        }
+        if ('focus' in client) return client.focus();
       }
-      if (clients.openWindow) {
-        return clients.openWindow('./index.html');
-      }
+      if (clients.openWindow) return clients.openWindow('./');
     })
   );
 });
