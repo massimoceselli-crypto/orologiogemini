@@ -503,7 +503,7 @@
   <button class="corner-btn bottom-left" onclick="toggleClockStyle()" title="Cambia Vista"><i class="fa-solid fa-rotate"></i></button>
   <button class="corner-btn bottom-right" onclick="toggleWakeLock()" title="Schermo Sempre Acceso"><i id="lock-icon" class="fa-solid fa-lightbulb" style="color:#ffeb3b;"></i></button>
 
-  <div class="clock-container" onclick="toggleScreensaver()">
+  <div class="clock-container" onclick="toggleScreensaverManual()">
     <div id="digital-clock">
       <div id="time-display" class="time-digital">00:00:00</div>
     </div>
@@ -570,7 +570,7 @@
           <i class="fa-solid fa-chevron-right"></i>
         </button>
 
-        <button class="btn-close" onclick="closeSettings()">CHIUDI IMPOSTAZIONI</button>
+        <button class="btn-close" onclick="closeSettingsWithScreensaverCheck()">CHIUDI IMPOSTAZIONI</button>
       </div>
 
       <div id="submenu-alarm" style="display:none;">
@@ -770,6 +770,9 @@
     let cdTotalSeconds = 300;
     let cdInterval = null;
 
+    let screensaverActive = false;
+    let isCharging = false;
+
     function unlockAudioContext() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -877,7 +880,6 @@
       localStorage.setItem('og_alarm_time', alarmTime);
       localStorage.setItem('og_alarm_active', true);
 
-      // Invia l'orario al Service Worker
       if (navigator.serviceWorker) {
         if (navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({
@@ -1093,7 +1095,7 @@
       document.getElementById('alarm-ring-modal').style.display = 'flex';
       document.getElementById('alarm-ring-title').innerText = customTitle || "⏰ SVEGLIA!";
       document.getElementById('alarm-ring-sub').innerText = `Sono le ore ${hStr}:${mStr}`;
-      currentVolume = 0.3;
+      currentVolume = 0.05;
 
       if (soundChoice === 'custom' && savedMP3Blob) {
         playCustomMP3Alarm();
@@ -1110,26 +1112,26 @@
       const audioUrl = URL.createObjectURL(savedMP3Blob);
       customAudioElement = new Audio(audioUrl);
       customAudioElement.loop = true;
-      customAudioElement.volume = currentVolume;
+      customAudioElement.volume = 0.0;
       if (customAudioElement.setSinkId) {
         customAudioElement.setSinkId('default').catch(() => {});
       }
+      
       currentVolume = 0.0;
-    customAudioElement.volume = 0.0;
-    customAudioElement.play().catch(e => {
+      customAudioElement.play().catch(e => {
         playBeepAlarm();
-    });
+      });
 
-    if (fadeInterval) clearInterval(fadeInterval);
-    fadeInterval = setInterval(() => {
+      if (fadeInterval) clearInterval(fadeInterval);
+      fadeInterval = setInterval(() => {
         if (customAudioElement && currentVolume < 1.0) {
-            currentVolume = Math.min(1.0, currentVolume + 0.05);
-            customAudioElement.volume = currentVolume;
+          currentVolume = Math.min(1.0, currentVolume + 0.05);
+          customAudioElement.volume = currentVolume;
         } else {
-            clearInterval(fadeInterval);
+          clearInterval(fadeInterval);
         }
-    }, 500);
-}
+      }, 500);
+    }
 
     function playSpeechAlarm(hStr, mStr) {
       if (!('speechSynthesis' in window)) return;
@@ -1232,7 +1234,18 @@
       showMainMenu();
       document.getElementById('settings-modal').style.display = 'flex'; 
     }
-    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+    
+    function closeSettings() { 
+      document.getElementById('settings-modal').style.display = 'none'; 
+    }
+
+    // Funzione intelligente attivata quando premi "CHIUDI IMPOSTAZIONI"
+    function closeSettingsWithScreensaverCheck() {
+      closeSettings();
+      if (isCharging) {
+        setScreensaver(true); // Se sotto carica, riattiva automaticamente lo screensaver
+      }
+    }
 
     function toggleFullscreen() {
       const fsIcon = document.getElementById('fs-icon');
@@ -1278,23 +1291,59 @@
       const level = Math.round(bat.level * 100);
       document.getElementById('battery-text').innerText = `${level}%`;
     }
+
     if ('getBattery' in navigator) {
       navigator.getBattery().then(bat => {
+        isCharging = bat.charging;
+        handleChargingChange(isCharging);
         updateBatteryInfo(bat);
+
+        bat.addEventListener('chargingchange', () => {
+          isCharging = bat.charging;
+          handleChargingChange(isCharging);
+          updateBatteryInfo(bat);
+        });
         bat.addEventListener('levelchange', () => updateBatteryInfo(bat));
       });
+    }
+
+    function handleChargingChange(charging) {
+      if (charging) {
+        // Sotto carica: attiva automaticamente lo screensaver all'80%
+        setScreensaver(true);
+      } else {
+        // Fuori carica: spegne lo screensaver automatico lasciando totale libertà di gestione manuale
+        setScreensaver(false);
+      }
+    }
+
+    function setScreensaver(active) {
+      screensaverActive = active;
+      if (screensaverActive) {
+        document.querySelector('.clock-container').style.opacity = '0.8';
+      } else {
+        document.querySelector('.clock-container').style.opacity = '1.0';
+      }
+    }
+
+    // Gestione manuale tramite tocco sullo schermo o pulsante
+    function toggleScreensaverManual() {
+      if (!isCharging) {
+        // A batteria decidi tu manualmente
+        screensaverActive = !screensaverActive;
+        document.querySelector('.clock-container').style.opacity = screensaverActive ? '0.8' : '1.0';
+      } else {
+        // Sotto carica: se tocchi lo schermo esci temporaneamente per impostare la sveglia
+        if (screensaverActive) {
+          setScreensaver(false);
+        }
+      }
     }
 
     function toggleBatteryGuard() {
       batteryGuardActive = !batteryGuardActive;
       const btn = document.getElementById('btn-battery-guard');
       btn.classList.toggle('active', batteryGuardActive);
-    }
-
-    let screensaverActive = false;
-    function toggleScreensaver() {
-      screensaverActive = !screensaverActive;
-      document.querySelector('.clock-container').style.opacity = screensaverActive ? '0.8' : '1.0';
     }
 
     if (navigator.geolocation) {
