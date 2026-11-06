@@ -9,7 +9,6 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(self.clients.claim());
 });
 
-// Gestione messaggi inviati dalla pagina web (index.html)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SET_ALARM') {
     alarmTime = event.data.time;
@@ -32,7 +31,6 @@ function startBackgroundTimer() {
     const currentTimeStr = `${currentH}:${currentM}`;
 
     if (currentTimeStr === alarmTime && now.getSeconds() === 0) {
-      // Scatena la notifica ad alta priorità per forzare il risveglio dello schermo
       self.registration.showNotification("⏰ SVEGLIA OROLOGIO GEMINI!", {
         body: `Sono le ore ${alarmTime}! Tocca per aprire e spegnere.`,
         icon: "https://cdn-icons-png.flaticon.com/512/3103/3103030.png",
@@ -46,7 +44,6 @@ function startBackgroundTimer() {
   }, 1000);
 }
 
-// Cliccando sulla notifica si riapre l'orologio a tutto schermo
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
