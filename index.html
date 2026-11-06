@@ -1114,17 +1114,22 @@
       if (customAudioElement.setSinkId) {
         customAudioElement.setSinkId('default').catch(() => {});
       }
-      customAudioElement.play().catch(e => {
+      currentVolume = 0.0;
+    customAudioElement.volume = 0.0;
+    customAudioElement.play().catch(e => {
         playBeepAlarm();
-      });
+    });
 
-      fadeInterval = setInterval(() => {
+    if (fadeInterval) clearInterval(fadeInterval);
+    fadeInterval = setInterval(() => {
         if (customAudioElement && currentVolume < 1.0) {
-          currentVolume = Math.min(1.0, currentVolume + 0.1);
-          customAudioElement.volume = currentVolume;
+            currentVolume = Math.min(1.0, currentVolume + 0.05);
+            customAudioElement.volume = currentVolume;
+        } else {
+            clearInterval(fadeInterval);
         }
-      }, 1000);
-    }
+    }, 500);
+}
 
     function playSpeechAlarm(hStr, mStr) {
       if (!('speechSynthesis' in window)) return;
