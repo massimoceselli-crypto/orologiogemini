@@ -733,7 +733,6 @@
     let audioCtx = null;
     let activeOscillators = [];
     let customAudioElement = null;
-    let silentAudioLoop = null;
 
     let db = null;
     const dbRequest = indexedDB.open("OrologioGeminiDB", 1);
@@ -781,32 +780,6 @@
     }
     document.body.addEventListener('click', unlockAudioContext, { once: false });
     document.body.addEventListener('touchstart', unlockAudioContext, { once: false });
-
-    // FUNZIONE AUDIO SILENZIOSO PER MANTENERE HYPEROS E ANDROID SEMPRE SVEGLI
-    function startSilentAudioBackground() {
-      if (!silentAudioLoop) {
-        // Genera una traccia audio inaudita di 1 secondo in loop costante
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const stream = canvas.captureStream();
-        unlockAudioContext();
-        
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        gain.gain.value = 0.0001; // Inudibile
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        silentAudioLoop = osc;
-      }
-    }
-
-    function stopSilentAudioBackground() {
-      if (silentAudioLoop) {
-        try { silentAudioLoop.stop(); } catch(e){}
-        silentAudioLoop = null;
-      }
-    }
 
     function openSubMenu(menuKey) {
       unlockAudioContext();
@@ -904,18 +877,24 @@
       localStorage.setItem('og_alarm_time', alarmTime);
       localStorage.setItem('og_alarm_active', true);
 
-      // Mantiene attiva la riproduzione multimediale per impedire a Xiaomi di spegnere il timer
-      startSilentAudioBackground();
-      
-      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'SET_ALARM',
-          time: alarmTime
-        });
+      // Invia l'orario al Service Worker
+      if (navigator.serviceWorker) {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'SET_ALARM',
+            time: alarmTime
+          });
+        } else {
+          navigator.serviceWorker.ready.then((reg) => {
+            if (reg.active) {
+              reg.active.postMessage({ type: 'SET_ALARM', time: alarmTime });
+            }
+          });
+        }
       }
 
       updateAlarmBtnUI();
-      alert(`Sveglia attivata per le ore ${alarmTime}! Protezione background attiva.`);
+      alert(`Sveglia impostata per le ore ${alarmTime}! Service Worker attivo.`);
     }
 
     function updateAlarmBtnUI() {
@@ -1110,7 +1089,6 @@
     function triggerAlarmRinging(hStr, mStr, customTitle) {
       isRinging = true;
       unlockAudioContext();
-      stopSilentAudioBackground();
       
       document.getElementById('alarm-ring-modal').style.display = 'flex';
       document.getElementById('alarm-ring-title').innerText = customTitle || "⏰ SVEGLIA!";
