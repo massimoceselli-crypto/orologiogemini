@@ -35,7 +35,6 @@
       align-items: center;
     }
 
-    /* FORZATURA SCHERMO INTERO CSS FALLBACK */
     body.pseudo-fullscreen {
       position: fixed !important;
       top: 0 !important;
@@ -497,7 +496,6 @@
   </style>
 </head>
 <body>
-  <!-- BOTTONE SCHERMO INTERO CON ICONA DINAMICA -->
   <button class="corner-btn top-left" onclick="toggleFullscreen()" title="Schermo Intero">
     <i id="fs-icon" class="fa-solid fa-expand"></i>
   </button>
@@ -714,8 +712,18 @@
   </div>
 
   <script>
+    let swRegistration = null;
+
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        swRegistration = reg;
+      }).catch(() => {});
+    }
+
+    function requestNotificationPermission() {
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission();
+      }
     }
 
     let clockMode = localStorage.getItem('og_mode') || 'digital';
@@ -859,6 +867,8 @@
 
     function toggleAlarm() {
       unlockAudioContext();
+      requestNotificationPermission();
+
       const hStr = String(alarmHours).padStart(2, '0');
       const mStr = String(alarmMinutes).padStart(2, '0');
       alarmTime = `${hStr}:${mStr}`;
@@ -867,8 +877,15 @@
       localStorage.setItem('og_alarm_time', alarmTime);
       localStorage.setItem('og_alarm_active', true);
       
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SET_ALARM',
+          time: alarmTime
+        });
+      }
+
       updateAlarmBtnUI();
-      alert(`Sveglia impostata ed attivata per le ore ${alarmTime}!`);
+      alert(`Sveglia impostata ed attivata per le ore ${alarmTime}! (Controllo background attivo)`);
     }
 
     function updateAlarmBtnUI() {
@@ -1203,7 +1220,6 @@
     }
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
 
-    // NUOVA FUNZIONE SCHERMO INTERO CON FALLBACK ED ICONA DINAMICA
     function toggleFullscreen() {
       const fsIcon = document.getElementById('fs-icon');
       const body = document.body;
@@ -1213,7 +1229,6 @@
           document.documentElement.requestFullscreen().then(() => {
             fsIcon.className = 'fa-solid fa-compress';
           }).catch(() => {
-            // Fallback CSS per browser mobile rigidi
             body.classList.add('pseudo-fullscreen');
             fsIcon.className = 'fa-solid fa-compress';
           });
