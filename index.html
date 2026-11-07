@@ -501,7 +501,7 @@
   </button>
   <button class="corner-btn top-right" onclick="openSettings()" title="Menu Impostazioni"><i class="fa-solid fa-gear"></i></button>
   <button class="corner-btn bottom-left" onclick="toggleClockStyle()" title="Cambia Vista"><i class="fa-solid fa-rotate"></i></button>
-  <button class="corner-btn bottom-right" onclick="toggleWakeLock()" title="Schermo Sempre Acceso"><i id="lock-icon" class="fa-solid fa-lightbulb" style="color:#ffeb3b;"></i></button>
+  <button class="corner-btn bottom-right" onclick="toggleWakeLockManual()" title="Schermo Sempre Acceso"><i id="lock-icon" class="fa-solid fa-lightbulb" style="color:#ffeb3b;"></i></button>
 
   <div class="clock-container" onclick="resetInactivityTimer()">
     <div id="digital-clock">
@@ -1273,13 +1273,32 @@
       }
     }
 
-    async function toggleWakeLock() {
+    // Gestione Wake Lock per mantenere il display acceso durante lo screensaver
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator && !wakeLock) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.error(`Errore WakeLock: ${err.name}, ${err.message}`);
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        wakeLock.release().then(() => {
+          wakeLock = null;
+        }).catch(() => {});
+      }
+    }
+
+    async function toggleWakeLockManual() {
       try {
         if (!wakeLock && 'wakeLock' in navigator) {
           wakeLock = await navigator.wakeLock.request('screen');
           document.getElementById('lock-icon').style.color = '#ffeb3b';
         } else if (wakeLock) {
-          wakeLock.release();
+          await wakeLock.release();
           wakeLock = null;
           document.getElementById('lock-icon').style.color = '#777';
         }
@@ -1302,8 +1321,10 @@
       screensaverActive = active;
       if (screensaverActive) {
         document.querySelector('.clock-container').style.opacity = '0.8';
+        requestWakeLock(); // Mantiene il display attivo per la sveglia
       } else {
         document.querySelector('.clock-container').style.opacity = '1.0';
+        releaseWakeLock();
       }
     }
 
