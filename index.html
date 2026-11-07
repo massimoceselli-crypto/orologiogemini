@@ -244,7 +244,7 @@
       max-width: 460px;
       width: 100%;
       max-height: 90vh;
-      overflow-y: auto;
+      overflow-y: auto; /* Abilita lo scorrimento fluido verticale */
       text-align: center;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95);
     }
@@ -297,6 +297,17 @@
       background: #00bcd4;
       color: #000;
     }
+
+    /* Stile per il pulsante interruttore rapido sveglia nel menu principale */
+    .menu-item-btn.alarm-quick-toggle {
+      background: #1e3a2f;
+      border-color: #00e676;
+    }
+    .menu-item-btn.alarm-quick-toggle.off {
+      background: #3a1e1e;
+      border-color: #e53935;
+    }
+
     .btn-back {
       background: #333;
       color: #ffb74d;
@@ -540,8 +551,14 @@
       <h2 id="modal-title">⚙️ IMPOSTAZIONI</h2>
 
       <div id="menu-main-view">
+        <!-- Tasto interruttore rapido sveglia nel menu principale -->
+        <button id="main-quick-alarm-btn" class="menu-item-btn alarm-quick-toggle" onclick="toggleAlarmQuickFromMenu()">
+          <span id="main-quick-alarm-text"><i class="fa-solid fa-bell" style="margin-right:10px;"></i> Sveglia: ATTIVA (--:--)</span>
+          <i id="main-quick-alarm-icon" class="fa-solid fa-toggle-on" style="font-size:22px;"></i>
+        </button>
+
         <button class="menu-item-btn" onclick="openSubMenu('alarm')">
-          <span><i class="fa-solid fa-bell" style="color:#00bcd4; margin-right:10px;"></i> 🔔 Impostazione Sveglia</span>
+          <span><i class="fa-solid fa-bell" style="color:#00bcd4; margin-right:10px;"></i> 🔔 Impostazione Orario Sveglia</span>
           <i class="fa-solid fa-chevron-right"></i>
         </button>
 
@@ -811,6 +828,7 @@
       });
       document.getElementById('menu-main-view').style.display = 'block';
       document.getElementById('modal-title').innerText = '⚙️ IMPOSTAZIONI';
+      updateMainQuickAlarmUI();
     }
 
     function selectAlarmPickerField(field) {
@@ -881,23 +899,48 @@
       localStorage.setItem('og_alarm_time', alarmTime);
       localStorage.setItem('og_alarm_active', true);
 
+      syncServiceWorkerAlarm();
+      updateAlarmBtnUI();
+      updateMainQuickAlarmUI();
+      alert(`Sveglia impostata per le ore ${alarmTime}!`);
+    }
+
+    // Funzione rapida per attivare/disattivare la sveglia direttamente dal tasto nel menu principale
+    function toggleAlarmQuickFromMenu() {
+      unlockAudioContext();
+      if (!alarmTime) {
+        alarmTime = "07:00";
+        alarmHours = 7;
+        alarmMinutes = 0;
+        localStorage.setItem('og_alarm_time', alarmTime);
+      }
+      isAlarmActive = !isAlarmActive;
+      localStorage.setItem('og_alarm_active', isAlarmActive);
+
+      if (isAlarmActive) {
+        requestNotificationPermission();
+        syncServiceWorkerAlarm();
+      }
+
+      updateAlarmBtnUI();
+      updateMainQuickAlarmUI();
+    }
+
+    function syncServiceWorkerAlarm() {
       if (navigator.serviceWorker) {
         if (navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({
             type: 'SET_ALARM',
-            time: alarmTime
+            time: isAlarmActive ? alarmTime : ''
           });
         } else {
           navigator.serviceWorker.ready.then((reg) => {
             if (reg.active) {
-              reg.active.postMessage({ type: 'SET_ALARM', time: alarmTime });
+              reg.active.postMessage({ type: 'SET_ALARM', time: isAlarmActive ? alarmTime : '' });
             }
           });
         }
       }
-
-      updateAlarmBtnUI();
-      alert(`Sveglia impostata per le ore ${alarmTime}! Service Worker attivo.`);
     }
 
     function updateAlarmBtnUI() {
@@ -914,6 +957,25 @@
         btn.classList.remove('active');
         btn.innerHTML = `<i class="fa-solid fa-bell"></i> SALVA E ATTIVA SVEGLIA`;
         statusBar.style.display = 'none';
+      }
+    }
+
+    function updateMainQuickAlarmUI() {
+      const quickBtn = document.getElementById('main-quick-alarm-btn');
+      const quickText = document.getElementById('main-quick-alarm-text');
+      const quickIcon = document.getElementById('main-quick-alarm-icon');
+      const timeStr = alarmTime || '--:--';
+
+      if (isAlarmActive && alarmTime) {
+        quickBtn.classList.remove('off');
+        quickBtn.classList.add('alarm-quick-toggle');
+        quickText.innerHTML = `<i class="fa-solid fa-bell" style="margin-right:10px;"></i> Sveglia: ATTIVA (${timeStr})`;
+        quickIcon.className = 'fa-solid fa-toggle-on';
+      } else {
+        quickBtn.classList.remove('alarm-quick-toggle');
+        quickBtn.classList.add('off');
+        quickText.innerHTML = `<i class="fa-solid fa-bell-slash" style="margin-right:10px;"></i> Sveglia: DISATTIVA`;
+        quickIcon.className = 'fa-solid fa-toggle-off';
       }
     }
 
@@ -1273,7 +1335,6 @@
       }
     }
 
-    // Gestione Wake Lock per mantenere il display acceso durante lo screensaver
     async function requestWakeLock() {
       try {
         if ('wakeLock' in navigator && !wakeLock) {
@@ -1321,7 +1382,7 @@
       screensaverActive = active;
       if (screensaverActive) {
         document.querySelector('.clock-container').style.opacity = '0.8';
-        requestWakeLock(); // Mantiene il display attivo per la sveglia
+        requestWakeLock();
       } else {
         document.querySelector('.clock-container').style.opacity = '1.0';
         releaseWakeLock();
