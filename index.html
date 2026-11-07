@@ -503,7 +503,7 @@
   <button class="corner-btn bottom-left" onclick="toggleClockStyle()" title="Cambia Vista"><i class="fa-solid fa-rotate"></i></button>
   <button class="corner-btn bottom-right" onclick="toggleWakeLock()" title="Schermo Sempre Acceso"><i id="lock-icon" class="fa-solid fa-lightbulb" style="color:#ffeb3b;"></i></button>
 
-  <div class="clock-container" onclick="toggleScreensaverManual()">
+  <div class="clock-container" onclick="resetInactivityTimer()">
     <div id="digital-clock">
       <div id="time-display" class="time-digital">00:00:00</div>
     </div>
@@ -771,7 +771,8 @@
     let cdInterval = null;
 
     let screensaverActive = false;
-    let isCharging = false;
+    let inactivityTimer = null;
+    const INACTIVITY_DELAY = 15000; // 15 secondi di inattività
 
     function unlockAudioContext() {
       if (!audioCtx) {
@@ -1239,12 +1240,10 @@
       document.getElementById('settings-modal').style.display = 'none'; 
     }
 
-    // Funzione intelligente attivata quando premi "CHIUDI IMPOSTAZIONI"
     function closeSettingsWithScreensaverCheck() {
       closeSettings();
-      if (isCharging) {
-        setScreensaver(true); // Se sotto carica, riattiva automaticamente lo screensaver
-      }
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      setScreensaver(true);
     }
 
     function toggleFullscreen() {
@@ -1294,27 +1293,9 @@
 
     if ('getBattery' in navigator) {
       navigator.getBattery().then(bat => {
-        isCharging = bat.charging;
-        handleChargingChange(isCharging);
         updateBatteryInfo(bat);
-
-        bat.addEventListener('chargingchange', () => {
-          isCharging = bat.charging;
-          handleChargingChange(isCharging);
-          updateBatteryInfo(bat);
-        });
         bat.addEventListener('levelchange', () => updateBatteryInfo(bat));
       });
-    }
-
-    function handleChargingChange(charging) {
-      if (charging) {
-        // Sotto carica: attiva automaticamente lo screensaver all'80%
-        setScreensaver(true);
-      } else {
-        // Fuori carica: spegne lo screensaver automatico lasciando totale libertà di gestione manuale
-        setScreensaver(false);
-      }
     }
 
     function setScreensaver(active) {
@@ -1326,19 +1307,20 @@
       }
     }
 
-    // Gestione manuale tramite tocco sullo schermo o pulsante
-    function toggleScreensaverManual() {
-      if (!isCharging) {
-        // A batteria decidi tu manualmente
-        screensaverActive = !screensaverActive;
-        document.querySelector('.clock-container').style.opacity = screensaverActive ? '0.8' : '1.0';
-      } else {
-        // Sotto carica: se tocchi lo schermo esci temporaneamente per impostare la sveglia
-        if (screensaverActive) {
-          setScreensaver(false);
-        }
+    function resetInactivityTimer() {
+      if (screensaverActive) {
+        setScreensaver(false);
       }
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        setScreensaver(true);
+      }, INACTIVITY_DELAY);
     }
+
+    document.body.addEventListener('touchstart', resetInactivityTimer);
+    document.body.addEventListener('click', resetInactivityTimer);
+    document.body.addEventListener('mousemove', resetInactivityTimer);
+    resetInactivityTimer();
 
     function toggleBatteryGuard() {
       batteryGuardActive = !batteryGuardActive;
