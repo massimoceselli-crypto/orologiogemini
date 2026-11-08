@@ -68,7 +68,18 @@
     .top-left { top: 18px; left: 18px; }
     .top-right { top: 18px; right: 18px; }
     .bottom-left { bottom: 18px; left: 18px; }
-    .bottom-right { bottom: 18px; right: 18px; }
+    
+    /* Pulsante Lampadina ingrandito e con rilievo accentuato in basso a destra */
+    .bottom-right { 
+      bottom: 18px; 
+      right: 18px; 
+      width: 64px; 
+      height: 64px; 
+      font-size: 28px; 
+      background: rgba(20, 20, 20, 0.85);
+      border: 2px solid rgba(255, 235, 59, 0.6);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 235, 59, 0.3);
+    }
 
     .clock-container {
       display: flex;
@@ -82,7 +93,7 @@
     }
 
     .time-digital {
-      font-size: clamp(4rem, 18vw, 11rem);
+      font-size: clamp(3.5rem, 15vw, 10rem);
       font-weight: 800;
       font-family: 'Courier New', Courier, monospace;
       letter-spacing: -2px;
@@ -92,28 +103,42 @@
     }
 
     .date-display {
-      font-size: clamp(1.4rem, 4.5vw, 2.8rem);
+      font-size: clamp(1.2rem, 3.5vw, 2.4rem);
       color: #ffffff;
-      margin-top: 20px;
+      margin-top: 10px;
+      margin-bottom: 14px;
       font-weight: 700;
       text-transform: capitalize;
       letter-spacing: 0.5px;
       text-shadow: 0 2px 10px rgba(0,0,0,0.8);
     }
 
+    /* Barra info adattiva: in verticale si dispone su più righe con caratteri più grandi; in orizzontale su un'unica riga */
     .info-bar {
       display: flex;
-      gap: 18px;
-      margin-top: 16px;
-      font-size: 16px;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: clamp(15px, 2.2vw, 20px);
       color: #ffb74d;
       font-weight: 700;
       flex-wrap: wrap;
       justify-content: center;
+      max-width: 900px;
+      padding: 0 10px;
+    }
+    
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 6px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .alarm-status-bar {
-      margin-top: 12px;
+      margin-top: 8px;
       font-size: 16px;
       color: #00e676;
       font-weight: bold;
@@ -121,7 +146,7 @@
       align-items: center;
       gap: 8px;
       background: rgba(0, 230, 118, 0.15);
-      padding: 8px 18px;
+      padding: 6px 16px;
       border-radius: 20px;
       border: 1px solid rgba(0, 230, 118, 0.4);
     }
@@ -244,7 +269,7 @@
       max-width: 460px;
       width: 100%;
       max-height: 90vh;
-      overflow-y: auto; /* Abilita lo scorrimento fluido verticale */
+      overflow-y: auto;
       text-align: center;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95);
     }
@@ -298,7 +323,6 @@
       color: #000;
     }
 
-    /* Stile per il pulsante interruttore rapido sveglia nel menu principale */
     .menu-item-btn.alarm-quick-toggle {
       background: #1e3a2f;
       border-color: #00e676;
@@ -349,7 +373,6 @@
       margin-bottom: 4px;
       letter-spacing: 0.5px;
     }
-    
     .time-box {
       font-size: 32px;
       font-weight: bold;
@@ -367,7 +390,6 @@
       background: #ffffff;
       box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
     }
-    
     .time-separator {
       font-size: 30px;
       font-weight: bold;
@@ -512,7 +534,11 @@
   </button>
   <button class="corner-btn top-right" onclick="openSettings()" title="Menu Impostazioni"><i class="fa-solid fa-gear"></i></button>
   <button class="corner-btn bottom-left" onclick="toggleClockStyle()" title="Cambia Vista"><i class="fa-solid fa-rotate"></i></button>
-  <button class="corner-btn bottom-right" onclick="toggleWakeLockManual()" title="Schermo Sempre Acceso"><i id="lock-icon" class="fa-solid fa-lightbulb" style="color:#ffeb3b;"></i></button>
+  
+  <!-- Tasto Lampadina ingrandito, in rilievo e con logica invertita -->
+  <button class="corner-btn bottom-right" onclick="toggleWakeLockManual()" title="Schermo Sempre Acceso">
+    <i id="lock-icon" class="fa-solid fa-lightbulb" style="color:#777;"></i>
+  </button>
 
   <div class="clock-container" onclick="resetInactivityTimer()">
     <div id="digital-clock">
@@ -525,17 +551,19 @@
       <div id="sec-hand" class="hand second"></div>
     </div>
     
+    <!-- Riga della data posizionata subito sotto l'orologio -->
     <div id="date-display" class="date-display">Caricamento data...</div>
 
     <div id="alarm-status-bar" class="alarm-status-bar">
       <i class="fa-solid fa-bell"></i> Sveglia impostata alle <span id="alarm-status-time">--:--</span>
     </div>
 
+    <!-- Barra informativa ottimizzata per visibilità e leggibilità -->
     <div class="info-bar">
-      <div><i class="fa-solid fa-cloud-sun"></i> <span id="weather-text">Meteo...</span></div>
-      <div><i class="fa-solid fa-droplet"></i> Int. <span id="hum-int">45%</span> | Est. <span id="hum-ext">--%</span></div>
-      <div><i class="fa-solid fa-gauge-high"></i> Pressione: <span id="pressure-text">-- hPa</span></div>
-      <div><i class="fa-solid fa-battery-three-quarters"></i> <span id="battery-text">--%</span></div>
+      <div class="info-item"><i class="fa-solid fa-cloud-sun"></i> <span id="weather-text">Meteo...</span></div>
+      <div class="info-item"><i class="fa-solid fa-droplet"></i> Int. <span id="hum-int">45%</span> | Est. <span id="hum-ext">--%</span></div>
+      <div class="info-item"><i class="fa-solid fa-gauge-high"></i> <span id="pressure-text">-- hPa</span></div>
+      <div class="info-item"><i class="fa-solid fa-battery-three-quarters"></i> <span id="battery-text">--%</span></div>
     </div>
   </div>
 
@@ -551,7 +579,6 @@
       <h2 id="modal-title">⚙️ IMPOSTAZIONI</h2>
 
       <div id="menu-main-view">
-        <!-- Tasto interruttore rapido sveglia nel menu principale -->
         <button id="main-quick-alarm-btn" class="menu-item-btn alarm-quick-toggle" onclick="toggleAlarmQuickFromMenu()">
           <span id="main-quick-alarm-text"><i class="fa-solid fa-bell" style="margin-right:10px;"></i> Sveglia: ATTIVA (--:--)</span>
           <i id="main-quick-alarm-icon" class="fa-solid fa-toggle-on" style="font-size:22px;"></i>
@@ -745,7 +772,6 @@
 
     let clockMode = localStorage.getItem('og_mode') || 'digital';
     let currentColor = localStorage.getItem('og_color') || '#00bcd4';
-    let showSeconds = true;
     let wakeLock = null;
     let audioCtx = null;
     let activeOscillators = [];
@@ -789,7 +815,7 @@
 
     let screensaverActive = false;
     let inactivityTimer = null;
-    const INACTIVITY_DELAY = 15000; // 15 secondi di inattività
+    const INACTIVITY_DELAY = 15000;
 
     function unlockAudioContext() {
       if (!audioCtx) {
@@ -859,26 +885,20 @@
     function attachHoldEvents(btnId, delta) {
       const btn = document.getElementById(btnId);
       if (!btn) return;
-
       const startHold = (e) => {
         e.preventDefault();
         adjustAlarmTime(delta);
         holdTimer = setTimeout(() => {
-          holdInterval = setInterval(() => {
-            adjustAlarmTime(delta);
-          }, 80);
+          holdInterval = setInterval(() => { adjustAlarmTime(delta); }, 80);
         }, 400);
       };
-
       const stopHold = () => {
         if (holdTimer) clearTimeout(holdTimer);
         if (holdInterval) clearInterval(holdInterval);
       };
-
       btn.addEventListener('mousedown', startHold);
       btn.addEventListener('mouseup', stopHold);
       btn.addEventListener('mouseleave', stopHold);
-
       btn.addEventListener('touchstart', startHold, { passive: false });
       btn.addEventListener('touchend', stopHold);
       btn.addEventListener('touchcancel', stopHold);
@@ -905,7 +925,6 @@
       alert(`Sveglia impostata per le ore ${alarmTime}!`);
     }
 
-    // Funzione rapida per attivare/disattivare la sveglia direttamente dal tasto nel menu principale
     function toggleAlarmQuickFromMenu() {
       unlockAudioContext();
       if (!alarmTime) {
@@ -1179,11 +1198,8 @@
       if (customAudioElement.setSinkId) {
         customAudioElement.setSinkId('default').catch(() => {});
       }
-      
       currentVolume = 0.0;
-      customAudioElement.play().catch(e => {
-        playBeepAlarm();
-      });
+      customAudioElement.play().catch(e => { playBeepAlarm(); });
 
       if (fadeInterval) clearInterval(fadeInterval);
       fadeInterval = setInterval(() => {
@@ -1335,33 +1351,21 @@
       }
     }
 
-    async function requestWakeLock() {
-      try {
-        if ('wakeLock' in navigator && !wakeLock) {
-          wakeLock = await navigator.wakeLock.request('screen');
-        }
-      } catch (err) {
-        console.error(`Errore WakeLock: ${err.name}, ${err.message}`);
-      }
-    }
-
-    function releaseWakeLock() {
-      if (wakeLock) {
-        wakeLock.release().then(() => {
-          wakeLock = null;
-        }).catch(() => {});
-      }
-    }
-
     async function toggleWakeLockManual() {
+      const lockIcon = document.getElementById('lock-icon');
+      const btn = lockIcon.parentElement;
       try {
         if (!wakeLock && 'wakeLock' in navigator) {
           wakeLock = await navigator.wakeLock.request('screen');
-          document.getElementById('lock-icon').style.color = '#ffeb3b';
+          lockIcon.style.color = '#ffeb3b';
+          btn.style.borderColor = 'rgba(255, 235, 59, 0.9)';
+          btn.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 235, 59, 0.6)';
         } else if (wakeLock) {
           await wakeLock.release();
           wakeLock = null;
-          document.getElementById('lock-icon').style.color = '#777';
+          lockIcon.style.color = '#777';
+          btn.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+          btn.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.8)';
         }
       } catch (e) {}
     }
@@ -1382,10 +1386,18 @@
       screensaverActive = active;
       if (screensaverActive) {
         document.querySelector('.clock-container').style.opacity = '0.8';
-        requestWakeLock();
+        if (!wakeLock && 'wakeLock' in navigator) {
+          navigator.wakeLock.request('screen').then(lock => {
+            wakeLock = lock;
+            const lockIcon = document.getElementById('lock-icon');
+            const btn = lockIcon.parentElement;
+            lockIcon.style.color = '#ffeb3b';
+            btn.style.borderColor = 'rgba(255, 235, 59, 0.9)';
+            btn.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 235, 59, 0.6)';
+          }).catch(()=>{});
+        }
       } else {
         document.querySelector('.clock-container').style.opacity = '1.0';
-        releaseWakeLock();
       }
     }
 
