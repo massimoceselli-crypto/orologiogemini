@@ -69,7 +69,6 @@
     .top-right { top: 18px; right: 18px; }
     .bottom-left { bottom: 18px; left: 18px; }
     
-    /* Pulsante Lampadina ingrandito e con rilievo accentuato in basso a destra */
     .bottom-right { 
       bottom: 18px; 
       right: 18px; 
@@ -77,8 +76,8 @@
       height: 64px; 
       font-size: 28px; 
       background: rgba(20, 20, 20, 0.85);
-      border: 2px solid rgba(255, 235, 59, 0.6);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 235, 59, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
     }
 
     .clock-container {
@@ -113,7 +112,6 @@
       text-shadow: 0 2px 10px rgba(0,0,0,0.8);
     }
 
-    /* Barra info adattiva: in verticale si dispone su più righe con caratteri più grandi; in orizzontale su un'unica riga */
     .info-bar {
       display: flex;
       gap: 16px;
@@ -535,7 +533,6 @@
   <button class="corner-btn top-right" onclick="openSettings()" title="Menu Impostazioni"><i class="fa-solid fa-gear"></i></button>
   <button class="corner-btn bottom-left" onclick="toggleClockStyle()" title="Cambia Vista"><i class="fa-solid fa-rotate"></i></button>
   
-  <!-- Tasto Lampadina ingrandito, in rilievo e con logica invertita -->
   <button class="corner-btn bottom-right" onclick="toggleWakeLockManual()" title="Schermo Sempre Acceso">
     <i id="lock-icon" class="fa-solid fa-lightbulb" style="color:#777;"></i>
   </button>
@@ -551,14 +548,12 @@
       <div id="sec-hand" class="hand second"></div>
     </div>
     
-    <!-- Riga della data posizionata subito sotto l'orologio -->
     <div id="date-display" class="date-display">Caricamento data...</div>
 
     <div id="alarm-status-bar" class="alarm-status-bar">
       <i class="fa-solid fa-bell"></i> Sveglia impostata alle <span id="alarm-status-time">--:--</span>
     </div>
 
-    <!-- Barra informativa ottimizzata per visibilità e leggibilità -->
     <div class="info-bar">
       <div class="info-item"><i class="fa-solid fa-cloud-sun"></i> <span id="weather-text">Meteo...</span></div>
       <div class="info-item"><i class="fa-solid fa-droplet"></i> Int. <span id="hum-int">45%</span> | Est. <span id="hum-ext">--%</span></div>
@@ -1386,16 +1381,7 @@
       screensaverActive = active;
       if (screensaverActive) {
         document.querySelector('.clock-container').style.opacity = '0.8';
-        if (!wakeLock && 'wakeLock' in navigator) {
-          navigator.wakeLock.request('screen').then(lock => {
-            wakeLock = lock;
-            const lockIcon = document.getElementById('lock-icon');
-            const btn = lockIcon.parentElement;
-            lockIcon.style.color = '#ffeb3b';
-            btn.style.borderColor = 'rgba(255, 235, 59, 0.9)';
-            btn.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 235, 59, 0.6)';
-          }).catch(()=>{});
-        }
+        // Rimossa la forzatura automatica del Wake Lock: ora rispetta la tua scelta manuale!
       } else {
         document.querySelector('.clock-container').style.opacity = '1.0';
       }
