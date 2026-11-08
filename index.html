@@ -91,14 +91,43 @@
       transition: opacity 0.3s ease;
     }
 
+    /* Stile orologio digitale: in verticale (portrait) va su due righe con massima grandezza */
     .time-digital {
-      font-size: clamp(3.5rem, 15vw, 10rem);
       font-weight: 800;
       font-family: 'Courier New', Courier, monospace;
-      letter-spacing: -2px;
       color: #00bcd4;
       text-shadow: 0 0 35px rgba(0, 188, 212, 0.6);
-      line-height: 1;
+      text-align: center;
+      line-height: 1.1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #time-hm {
+      font-size: clamp(4.5rem, 23vw, 13rem);
+      letter-spacing: -2px;
+    }
+
+    #time-s {
+      font-size: clamp(2rem, 10vw, 5.5rem);
+      opacity: 0.85;
+      margin-top: -5px;
+    }
+
+    @media (orientation: landscape) {
+      .time-digital {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 12px;
+      }
+      #time-hm {
+        font-size: clamp(4rem, 16vw, 11rem);
+      }
+      #time-s {
+        font-size: clamp(1.8rem, 7vw, 5rem);
+        margin-top: 0;
+      }
     }
 
     .date-display {
@@ -539,7 +568,11 @@
 
   <div class="clock-container" onclick="resetInactivityTimer()">
     <div id="digital-clock">
-      <div id="time-display" class="time-digital">00:00:00</div>
+      <!-- Ore e minuti sopra, secondi sotto al centro -->
+      <div class="time-digital">
+        <div id="time-hm">00:00</div>
+        <div id="time-s">00</div>
+      </div>
     </div>
     <div id="analog-clock" class="analog-clock">
       <div class="analog-center"></div>
@@ -1140,7 +1173,10 @@
       const hStr = String(h).padStart(2, '0');
       const mStr = String(m).padStart(2, '0');
       const sStr = String(s).padStart(2, '0');
-      document.getElementById('time-display').innerText = `${hStr}:${mStr}:${sStr}`;
+      
+      // Aggiornamento separato per ore/minuti e secondi (per gestire le due righe in verticale)
+      document.getElementById('time-hm').innerText = `${hStr}:${mStr}`;
+      document.getElementById('time-s').innerText = `:${sStr}`;
 
       if (s === 0) checkAlarm(hStr, mStr);
 
@@ -1294,8 +1330,10 @@
     function changeColor(color) {
       currentColor = color;
       localStorage.setItem('og_color', color);
-      document.getElementById('time-display').style.color = color;
-      document.getElementById('time-display').style.textShadow = `0 0 35px ${color}80`;
+      document.getElementById('time-hm').style.color = color;
+      document.getElementById('time-hm').style.textShadow = `0 0 35px ${color}80`;
+      document.getElementById('time-s').style.color = color;
+      document.getElementById('time-s').style.textShadow = `0 0 35px ${color}80`;
       document.getElementById('analog-clock').style.borderColor = color;
       document.querySelectorAll('.clock-number').forEach(el => el.style.color = color);
     }
